@@ -199,7 +199,7 @@ draw = (data) ->
           male.push(sex is "Male")
           genotypes.push(g)
 
-     if chr == "X"
+    if chr == "X"
       genotypes[0] = "BR"
       genotypes[1] = "RR"
 
@@ -550,7 +550,7 @@ draw = (data) ->
                  d3.select(this).attr("opacity", 1).attr("fill",pink).attr("stroke",purple)
                  effectPlot chr, td
                  revPXG chr, td
-                 unless randomMarker is ""
+                 if randomMarker != "" and randomMarker != td
                    d3.select("#circle#{randomMarker}")
                      .attr("opacity", 0)
                      .attr("fill",purple)
@@ -594,6 +594,7 @@ draw = (data) ->
                botsvg.select("path#detailedLod")
                   .attr("d", botlodcurve(d)(data.lod[d].pos))
                botsvg.selectAll("circle.markercircle").remove()
+               randomMarker = maxLodByChr_marker[d]
                dotsAtMarkers(d)
                d3.select("text#botLtitle").text("Chromosome #{d}")
 
@@ -667,4 +668,4 @@ draw = (data) ->
            .attr("class", "outerBox")
 
 # load json file and call draw function
-d3.json("data/insulinlod.json", draw)
+d3.json("Data/insulinlod.json", draw)
