@@ -1,4 +1,4 @@
-Talk: &ldquo;Interactive Graphics for high-dimensional genetic data&rdquo;
+Talk: &ldquo;Interactive graphics for high-dimensional genetic data&rdquo;
 ----------------------------------------------------------------------
 
 See it in action [here](http://www.biostat.wisc.edu/~kbroman/talks/InteractiveGraphs3).
