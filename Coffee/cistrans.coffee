@@ -747,4 +747,4 @@ draw = (data) ->
        .attr("class", "outerBox")
 
 # load json file and call draw function
-d3.json("data/insulin_eqtl.json", draw)
+d3.json("Data/insulin_eqtl.json", draw)

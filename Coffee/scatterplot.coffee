@@ -3,7 +3,7 @@
 
 (( ->
 
-  d3.json "data/scatterplot.json", (weights) ->
+  d3.json "Data/scatterplot.json", (weights) ->
 
     svgscale = plotframe weights, {chartname: "#scatterplot", xlab:"Weight 1", ylab:"Weight 2", height: 600, width: 620,
     pad: {bottom: 90, left: 100, top: 0, right: 10, scale: 0.05}, tickPadding: 8}

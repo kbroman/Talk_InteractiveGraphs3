@@ -415,4 +415,4 @@ draw = (data) ->
 
 
 # load json file and call draw function
-d3.json("data/hypo.json", draw)
+d3.json("Data/hypo.json", draw)

@@ -3,7 +3,7 @@
 
 (( ->
 
-  d3.json "data/density.json", (mixData) ->
+  d3.json "Data/density.json", (mixData) ->
   
     # functions for printing rounded numbers
     twodigits = d3.format ".2f"
