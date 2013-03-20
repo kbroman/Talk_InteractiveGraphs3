@@ -1,0 +1,1212 @@
+<html>
+<head>
+<title>clean_genotypes.asciidoc</title>
+<style>
+html { height: 100%; margin-bottom: 1px; } /* force vertical scrollbar */
+body { width: 1280px; margin: 0 auto 20px auto; padding: 150px 0 20px 0; }
+body { background-color: black; color: white; font-size: 24px;}
+</style>
+</head>
+
+
+<body>
+<pre>
+Cleaning the genotype data for the Attie project
+================================================
+Karl W Broman &lt;kbroman@biostat.wisc.edu&gt;
+25 May 2011
+:toc2:
+:numbered:
+:data-uri:
+
+
+////////////////////////////////////////////
+Genotype data:
+  Data/genotypes4rqtl.csv  
+Map:
+  Maps/finalmap.csv
+Raw genotype information:
+  Data/detailed_genotypes.csv  
+////////////////////////////////////////////  
+
+== Load the data ==
+
+First we load the R/qtl package and print the version we're using.
+
+&lt;&lt;loadlib&gt;&gt;=
+library(qtl)
+qtlversion()
+@ 
+
+&lt;&lt;loadlibrary,echo=FALSE,results=hide&gt;&gt;=
+setCacheDir("Rcache")
+options(width=132, digits=3, scipen=4)
+set.seed(62896949)
+@ 
+
+We load the raw genotype data, which includes data on the parental
+strains and F~1~.  We drop the control mouse with a blank for ``strain.''
+
+&lt;&lt;loaddata,cache=TRUE&gt;&gt;=
+rawg &lt;- read.cross("csv", "Data", "genotypes4rqtl.csv", genotypes=0:2,
+                   convertXdata=FALSE, alleles=c("B","R"))
+rawg &lt;- subset(rawg, ind=(rawg$pheno$Strain!=""))
+@
+
+The mouse with missing strain also had missing sex, we clean up the
+sex and strain phenotypes as follows:
+
+&lt;&lt;fixsex&gt;&gt;=
+rawg$pheno$Sex &lt;- factor(as.character(rawg$pheno$Sex), levels=c("Female", "Male"))
+rawg$pheno$Strain &lt;- factor(as.character(rawg$pheno$Strain), levels=unique(as.character(rawg$pheno$Strain)))
+@
+
+
+A quick summary:
+
+&lt;&lt;summaryrawg&gt;&gt;=
+summary(rawg)
+@
+
+Note that the chromosome +"un"+ is a group of \Sexpr{nmar(rawg)["un"]}
+markers that I couldn't find in the mouse genome build 37.
+
+
+== Missing data pattern ==
+
+We first look at the number of missing genotypes at each mouse and
+each marker.
+
+&lt;&lt;histnmissing, fig=TRUE, height=10&gt;&gt;=
+par(mfrow=c(2,1), las=1)
+hist(nmissing(rawg), main="No. missing genotypes by mouse", 
+     xlab="No. missing genotypes", breaks=140)
+rug(nmissing(rawg), col="blue")
+hist(nmissing(rawg, what="mar"), main="No. missing genotypes by marker", 
+     xlab="No. missing genotypes", breaks=50)
+rug(nmissing(rawg, what="mar"), col="blue")
+@
+
+There are three mice with no genotype data.
+
+&lt;&lt;nodata&gt;&gt;=
+rawg$pheno[ntyped(rawg)==0,]
+@ 
+
+I might as well drop these.
+
+&lt;&lt;dropnodata&gt;&gt;=
+rawg &lt;- subset(rawg, ind=(ntyped(rawg)&gt;0))
+@ 
+
+We should look at the histogram of the number of missing genotypes per mouse again.
+
+&lt;&lt;histnmissingagain, fig=TRUE&gt;&gt;=
+par(las=1)
+hist(nmissing(rawg), main="No. genotypes by mouse", 
+     xlab="No. markers genotyped", breaks=140)
+rug(nmissing(rawg), col="blue")
+@
+
+
+There remain a number of mice with a good amount of missing data,
+which might suggest poor-quality DNAs or other problems with the
+genotyping arrays.  There are \Sexpr{sum(nmissing(rawg) &gt; 0.05*totmar(rawg))} 
+mice missing genotypes at more than 5% of the
+markers (that is, at more than \Sexpr{floor(0.05*totmar(rawg))}
+of the \Sexpr{totmar(rawg)} markers).  There are also a number of markers with elevated rates of
+missing data.  There are \Sexpr{sum(nmissing(rawg, "mar") &gt; nind(rawg)*0.05)}
+markers with more than 5% missing data (that is, at
+more than \Sexpr{floor(0.05*nind(rawg))} of the \Sexpr{nind(rawg)}
+mice).  But none of these seem terrible.
+
+
+
+== Study X chromosome genotypes ==
+
+Let's start by looking at the X chromosome genotypes.  The cross was
+(BTBR x B6) x (BTBR x B6), with females listed first, and so the F~1~
+males should all be hemizygous B6 or BTBR while the F~1~ females
+should be heterozygous.  The F~2~ males should be hemizygous B6 or
+BTBR and the F~2~ females should be heterozygous or homozygous BTBR.
+
+We pull out the X chromosome genotypes and the ``strain'' and sex for
+each mouse.
+
+&lt;&lt;pullxchrgeno&gt;&gt;=
+gx &lt;- pull.geno(rawg, chr="X")
+dim(gx)
+strain &lt;- rawg$pheno$Strain
+sex &lt;- rawg$pheno$Sex
+@
+
+=== Not segregating ===
+
+First, let's look at which markers seem to segregate in the F~2~.  We
+create a table of the three possible genotypes (1, 2, 3) and look at
+the number of mice with the least-frequent genotype.  Since there are 
+\Sexpr{sum(strain=="F2" & sex=="Male")} F~2~ males and 
+\Sexpr{sum(strain=="F2" & sex=="Female")} F~2~ females, all markers
+should have an appreciable number of mice with each of the
+three genotypes.
+
+&lt;&lt;segregateX&gt;&gt;=
+ming &lt;- apply(apply(gx[strain=="F2",], 2, function(a) table(factor(a, levels=1:3))), 2, min)
+table(ming)
+@
+
+There are \Sexpr{sum(ming &lt; 120)} markers that appear to not be
+segregating.  Let's go ahead and omit those.  We'll create a new cross
+object +cleang+ that will contain the cleaned genotypes. 
+
+&lt;&lt;drop_notseg_X&gt;&gt;=
+todrop &lt;- names(ming[ming&lt;120])
+cleang &lt;- drop.markers(rawg, todrop)
+gx &lt;- pull.geno(cleang, chr="X")
+dim(gx)
+@
+
+We have just \Sexpr{nmar(cleang)["X"]} markers left on the X chromosome.
+
+=== Genotypes in B6 and BTBR ===
+
+Let's first look at the B6 mice.  There are \Sexpr{sum(strain=="B6")}
+such; while \Sexpr{sum(strain=="B6" & sex=="Male")} are male and 
+\Sexpr{sum(strain=="B6" & sex=="Female")} is female, they should all
+be homozygous for the same allele.
+
+&lt;&lt;b6Xchr&gt;&gt;=
+all(apply(gx[strain=="B6",], 2, function(a) length(unique(a[!is.na(a)]))) == 1)
+b6xg &lt;- apply(gx[strain=="B6",], 2, function(a) unique(a[!is.na(a)]))
+@
+All of the B6 mice are homozygous for the same allele, on the X chromosome.
+
+We repeat this for the \Sexpr{sum(strain=="BTBR")} BTBR mice, of which 
+\Sexpr{sum(strain=="BTBR" & sex=="Male")} are male and 
+\Sexpr{sum(strain=="BTBR" & sex=="Female")} are female.  
+
+&lt;&lt;btbrXchr&gt;&gt;=
+all(apply(gx[strain=="BTBR",], 2, function(a) length(unique(a[!is.na(a)])) == 1))
+btbrxg &lt;- apply(gx[strain=="BTBR",], 2, function(a) unique(a[!is.na(a)]))
+@ 
+All of the BTBR mice are homozygous for the same allele, on the X chromosome.
+
+We further check that the B6 and BTBR genotypes are really _homozygous_
+and for different alleles at these \Sexpr{nmar(cleang)["X"]} markers.
+
+&lt;&lt;b6notbtbrX&gt;&gt;=
+all((b6xg == 1 & btbrxg==3) | (b6xg == 3 & btbrxg==1))
+@
+
+Let's swap the genotype codes for the markers where the B6 mice have
+the +3+ genotype (to make it so that +1+ is homozygous B6 and +3+ is homozygous BTBR).
+
+&lt;&lt;swapXgenotypes&gt;&gt;=
+toswap &lt;- names(b6xg)[b6xg==3]
+for(mar in toswap)
+  cleang$geno[["X"]]$data[,mar] &lt;- 4 - cleang$geno[["X"]]$data[,mar]
+gx &lt;- pull.geno(cleang, chr="X")
+@
+
+=== Genotypes in F~1~ ===
+
+Let's look at the \Sexpr{sum(strain=="F1")} F~1~ mice, of which 
+\Sexpr{sum(strain=="F1" & sex=="Male")} are male and 
+\Sexpr{sum(strain=="F1" & sex=="Female")} are female.  The males
+should all by homozygous BTBR and the females should
+all by heterozygous.
+
+&lt;&lt;checkF1X&gt;&gt;=
+f1male.gx &lt;- gx[strain=="F1" & sex=="Male",]
+f1female.gx &lt;- gx[strain=="F1" & sex=="Female",]
+all(is.na(f1male.gx) | f1male.gx==3)
+all(is.na(f1female.gx) | f1female.gx==2)
+@
+
+Everything looks good.
+
+=== Genotypes in F~2~ males ===
+
+We now turn to the F~2~ males.  They should all be hemizgous B6 (+1+)
+or BTBR (+3+).  
+
+&lt;&lt;checkF2maleX&gt;&gt;=
+f2male.gx &lt;- gx[strain=="F2" & sex=="Male",]
+sum(!is.na(f2male.gx) & f2male.gx==2)
+@
+
+There are \Sexpr{sum(!is.na(f2male.gx) & f2male.gx==2)} heterozygous
+genotypes in the \Sexpr{sum(strain=="F2" & sex=="Male")} male mice.
+Let's look at the males that have heterozygous calls.
+
+&lt;&lt;F2maleXhet&gt;&gt;=
+wh &lt;- apply(f2male.gx, 1, function(a) any(!is.na(a) & a==2))
+sum(wh)
+tab &lt;- apply(f2male.gx[wh,], 1, function(a) table(factor(a[!is.na(a)], levels=1:3)))
+tab[,order(tab[2,])]
+@
+
+The first \Sexpr{sum(tab[2,]==1)} of these look to be male but with a
+single genotyping error.  The other \Sexpr{sum(tab[2,]&gt;1)} look to be
+really female.  Let's save the IDs for these mice.
+
+&lt;&lt;notmale&gt;&gt;=
+malef2id &lt;- as.character(cleang$pheno$MouseNum)[strain=="F2" & sex=="Male"]
+notmale &lt;- malef2id[apply(f2male.gx, 1, function(a) sum(!is.na(a) & a==2)&gt;1)]
+@
+
+Note that there are additional male mice that might really be females;
+if all of their genotypes on the X chromosome are
+homozygous/hemizygous BTBR, we can't tell.
+
+&lt;&lt;notsuremale&gt;&gt;=
+sum(apply(f2male.gx, 1, function(a) all(is.na(a) | a==3)))
+@
+
+=== Genotypes in F~2~ females ===
+
+We turn to the F~2~ females.  They should all be heterozygous (+2+)
+or homozygous BTBR (+3+).  
+
+&lt;&lt;checkF2femaleX&gt;&gt;=
+f2female.gx &lt;- gx[strain=="F2" & sex=="Female",]
+sum(!is.na(f2female.gx) & f2female.gx==1)
+@
+
+There are \Sexpr{sum(!is.na(f2female.gx) & f2female.gx==1)} homozygous B6 genotypes in the 
+\Sexpr{sum(strain=="F2" & sex=="Female")} female mice.  Let's look at the
+females that have homozygous B6 calls.
+
+&lt;&lt;F2femaleXhet&gt;&gt;=
+wh &lt;- apply(f2female.gx, 1, function(a) any(!is.na(a) & a==1))
+sum(wh)
+tab &lt;- apply(f2female.gx[wh,], 1, function(a) table(factor(a[!is.na(a)], levels=1:3)))
+tab[,order(tab[1,])]
+@
+
+These all look to be clearly males. Let's save the IDs for these mice.
+
+&lt;&lt;notfemale&gt;&gt;=
+femalef2id &lt;- as.character(cleang$pheno$MouseNum)[strain=="F2" & sex=="Female"]
+notfemale &lt;- femalef2id[apply(f2female.gx, 1, function(a) sum(!is.na(a) & a==1)&gt;1)]
+@
+
+&lt;&lt;savethesexswaps,echo=FALSE&gt;&gt;=
+save(notmale, notfemale, file="Data/sex_swaps.RData")
+@
+
+Note that there are additional female mice that might really be males;
+if all of their genotypes on the X chromosome are
+homozygous/hemizygous BTBR, we can't tell.
+
+&lt;&lt;notsurefemale&gt;&gt;=
+sum(apply(f2female.gx, 1, function(a) all(is.na(a) | a==3)))
+@
+
+=== Swap sexes ===
+Let's go ahead and swap the sexes of these mice whose X chromosome genotypes 
+indicate they are the opposite sex.  We'll change the phenotype +Sex+
+to +SexID+ and make a new ``phenotype'' +Sex+.
+
+&lt;&lt;swapsex&gt;&gt;=
+names(cleang$pheno)[names(cleang$pheno)=="Sex"] &lt;- "SexID"
+cleang$pheno$Sex &lt;- cleang$pheno$SexID
+cleang$pheno$Sex[match(notmale, cleang$pheno$MouseNum)] &lt;- "Female"
+cleang$pheno$Sex[match(notfemale, cleang$pheno$MouseNum)] &lt;- "Male"
+table(cleang$pheno$SexID, cleang$pheno$Sex)
+@
+
+I'll re-create my +sex+ vector to match the new values.
+
+&lt;&lt;make_sex&gt;&gt;=
+sex &lt;- cleang$pheno$Sex
+@
+
+
+=== Re-code genotypes ===
+
+Now let's recode the X chromosome genotypes.  F~2~ females should have
+genotype codes +1+ for homozygous BTBR and +2+ for heterozygous.  F~2~
+males should have genotype codes +1+ for homozygous B6 and +2+ for
+homozygous BTBR.  
+
+First, we handle the males.
+
+&lt;&lt;recode_male_Xgenotypes&gt;&gt;=
+gx &lt;- pull.geno(cleang, chr="X")
+whmale &lt;- strain=="F2" & sex=="Male"
+gxmale &lt;- gx[whmale,]
+sum(!is.na(gxmale) & gxmale==2)
+gxmale[!is.na(gxmale) & gxmale==2] &lt;- NA
+gxmale[!is.na(gxmale) & gxmale==3] &lt;- 2
+gx[whmale,] &lt;- gxmale
+@
+
+Now, we handle the females.
+
+&lt;&lt;recode_female_Xgenotypes&gt;&gt;=
+whfemale &lt;- strain=="F2" & sex=="Female"
+gxfemale &lt;- gx[whfemale,]
+sum(!is.na(gxfemale) & gxfemale==1)
+gxfemale[!is.na(gxfemale) & gxfemale==1] &lt;- NA
+gxfemale[!is.na(gxfemale) & gxfemale==3] &lt;- 1
+gx[whfemale,] &lt;- gxfemale
+@
+
+Now we paste the genotypes back into the cross object.
+
+&lt;&lt;paste_genotypes&gt;&gt;=
+cleang$geno[["X"]]$data &lt;- gx
+@
+
+Let's further add a +pgm+ phenotype, indicating cross
+direction, which will be 1 for all F~2~ mice.
+
+&lt;&lt;addpgm&gt;&gt;=
+cleang$pheno$pgm &lt;- rep(NA, nind(cleang))
+cleang$pheno$pgm[strain=="F2"] &lt;- 1
+@
+
+The summary of the cross (with just the F~2~ mice) should be
+clean. (But then, the warnings don't get printed here anyway!)
+
+&lt;&lt;summaryagain&gt;&gt;=
+summary(subset(cleang, ind=(strain=="F2")))
+@
+
+=== Segregation patterns ===
+
+Let's look at the segregation of the genotypes on the X chromosome.
+First, let's look at the output of geno.table.  What we're looking for
+here are departures from 1:1 segregation that might indicate markers
+with high rates of genotyping errors.
+
+&lt;&lt;Xsegregation&gt;&gt;=
+geno.table(subset(cleang, ind=(strain=="F2")), chr="X")
+@
+
+Everything looks okay.  Let's make a couple of plots, of genotype
+frequencies along the X chromosome for each sex.
+
+&lt;&lt;plotXsegregation, fig=TRUE, height=8&gt;&gt;=
+par(mfrow=c(2,1), las=1)
+f2male &lt;- subset(cleang, ind=(strain=="F2" & sex=="Male"))
+plot(geno.table(f2male, chr="X", scanone=TRUE), lod=8:9,
+     main="X chr genotype frequencies; F2 males", 
+     ylab="Genotype frequency", col=c("blue","red"),
+     ylim=c(0.3, 0.7))
+abline(h=0.5, lty=2, col="gray")
+legend("topleft", lwd=2, col=c("blue","red"), 
+       legend=c("hem B6", "hem BTBR"))		  
+f2female &lt;- subset(cleang, ind=(strain=="F2" & sex=="Female"))
+plot(geno.table(f2female, chr="X", scanone=TRUE), lod=4:5,
+     main="X chr genotype frequencies; F2 females", 
+     ylab="Genotype frequency", col=c("green", "red"),
+     ylim=c(0.3, 0.7))
+abline(h=0.5, lty=2, col="gray")
+legend("topleft", lwd=2, col=c("green","red"), 
+       legend=c("het", "hom BTBR"))		  
+@
+
+The departures from 1:1 segregation seem not too worrisome.
+
+=== Counts of crossovers ===
+
+Let's look at the number of crossovers in the F~2~ mice on
+the X chromosome.
+
+&lt;&lt;countXO_onX&gt;&gt;=
+nxo &lt;- countXO(subset(cleang, ind=(strain=="F2")), chr="X")
+table(nxo)
+@
+
+There are \Sexpr{sum(nxo&gt;2)} mice with &gt;2 crossovers.  Let's plot
+the genotype data for these mice.  We run +calc.errorlod+ to avoid a
+warning message. (The genotyping error LOD scores are used in
++plot.geno+ to flag potential genotyping errors.)
+
+&lt;&lt;plotXgeno, fig=TRUE&gt;&gt;=
+temp &lt;- subset(cleang, ind=(strain=="F2"))
+temp &lt;- subset(temp, ind=(nxo&gt;2), chr="X")
+temp &lt;- calc.errorlod(temp, error.prob=0.002, map.function="c-f")
+plot.geno(temp, chr="X")
+@
+
+These look unusual, but there are no obvious problems.
+
+=== Re-estimate map ===
+
+Finally, let's re-estimate the genetic map for the X chromosome and
+see how it differs from the map from Cox et al. (_Genetics,_
+182:1335-1344, 2009).  I'll use a genotype error rate of 2/1000, and
+the Carter-Falconer map function (which corresponds, approximately, to
+the high level of crossover interference in the mouse).
+
+&lt;&lt;estmap&gt;&gt;=
+f2g &lt;- subset(cleang, ind=(strain=="F2"), chr="X")
+newmap &lt;- est.map(f2g, err=0.002, map.function="c-f")
+@
+
+Let's look at summaries of the original and the newly estimated maps.
+
+&lt;&lt;summarymap&gt;&gt;=
+summary.map(f2g)[1,,drop=FALSE]
+summary.map(newmap)[1,,drop=FALSE]
+@ 
+Overall, the map hasn't changed much.
+
+
+Let's plot the map next to the one embedded in the cross (which
+corresponds to that of Cox et al. 2009).  The map on the bottom is the
+newly estimated one
+
+&lt;&lt;plotmap, fig=TRUE&gt;&gt;=
+plot.map(f2g, newmap, horizontal=TRUE)
+@
+
+It sure looks similar.  It might be better to study the individual
+interval lengths.
+
+&lt;&lt;plotintervals, fig=TRUE&gt;&gt;=
+dom &lt;- diff(pull.map(f2g)[[1]])
+dnm &lt;- diff(newmap[[1]])
+par(las=1)
+plot(dom, dnm-dom, type="n", xlab="Original interval length (cM)",
+     ylab="Change in interval length (cM)")
+abline(h=0, lty=2, col="gray")
+text(dom, dnm-dom, seq(along=dnm))
+@
+
+Note that the numbers indicate the intervals.  Some of the smaller
+intervals have changed a great deal in length, but overall it looks
+pretty good.
+
+== Study autosomal genotypes ==
+
+We now turn to the autosomal genotypes.
+
+&lt;&lt;pullautosomalgeno&gt;&gt;=
+ga &lt;- pull.geno(cleang, chr="-X")
+dim(ga)
+@
+
+=== Not segregating ===
+
+First, let's look at which markers seem to segregate in the F~2~.  We
+create a table of the three possible genotypes (1, 2, 3) and look at
+the proportion of mice with the least-frequent genotype.  Since there
+are \Sexpr{ncol(ga)} markers, we'll look at a histogram.
+
+&lt;&lt;segregateA,fig=TRUE,cache=TRUE&gt;&gt;=
+ming &lt;- apply(apply(ga[strain=="F2",], 2, function(a) table(factor(a, levels=1:3))/sum(!is.na(a))), 2, min)
+par(las=1)
+hist(ming, breaks=seq(0, ceiling(max(ming)*100)/100, by=0.005),
+     xlab="Frequency of least-frequent genotype", main="")
+rug(ming, col="blue")
+@
+
+Note the big gap between \Sexpr{round(max(ming[ming&lt; 0.1])*100)}% and
+\Sexpr{round(min(ming[ming&gt;0.1])*100)}%.  There are 
+\Sexpr{sum(ming &lt; 0.1)} markers that appear not to be segregating, as
+the least-frequent genotype is present in &lt;10% of mice.  There are
+\Sexpr{sum(ming &gt; 0.1)} markers that do appear to be segregating, as
+the least-frequent genotype is present in &gt;10% of mice.
+
+Let's go ahead and omit the non-segregating markers.  
+
+&lt;&lt;drop_notseg_A&gt;&gt;=
+todrop &lt;- names(ming[ming&lt;0.1])
+cleang &lt;- drop.markers(cleang, todrop)
+ga &lt;- pull.geno(cleang, chr="-X")
+dim(ga)
+@
+
+
+=== Genotypes in B6 and BTBR ===
+
+Let's look at the B6 mice.  There are \Sexpr{sum(strain=="B6")}
+such; they should all
+be homozygous for the same allele.
+
+&lt;&lt;b6Achr&gt;&gt;=
+bad.b6 &lt;- apply(ga[strain=="B6",], 2, function(a) (length(unique(a[!is.na(a)]))) != 1 || all(is.na(a) | a==2))
+sum(bad.b6)
+ga[strain=="B6",bad.b6]
+@
+
+There are \Sexpr{sum(bad.b6)} markers with heterozygous calls,
+including one with no homozygous calls.
+
+Let's grab the inferred genotype (+1+, +3+, or +NA+) for B6 mice.
+
+&lt;&lt;b6Agenotype&gt;&gt;=
+b6ga &lt;- apply(ga[strain=="B6",], 2, function(a) if(all(is.na(a) | a==2)) return(NA) else return(unique(a[!is.na(a) & a!=2])))
+sum(is.na(b6ga))
+table(b6ga)
+@
+
+
+We repeat this for the \Sexpr{sum(strain=="BTBR")} BTBR mice.  
+
+&lt;&lt;btbrAchr&gt;&gt;=
+bad.btbr &lt;- apply(ga[strain=="BTBR",], 2, function(a) (length(unique(a[!is.na(a)]))) != 1 || all(is.na(a) | a==2))
+sum(bad.btbr)
+ga[strain=="BTBR",bad.btbr]
+@
+
+There are \Sexpr{sum(bad.btbr)} markers with heterozygous calls.
+
+Again, we pull out the inferred genotype for BTBR mice.
+
+&lt;&lt;btbrAgenotype&gt;&gt;=
+btbrga &lt;- apply(ga[strain=="BTBR",], 2, function(a) if(all(is.na(a) | a==2)) return(NA) else return(unique(a[!is.na(a) & a!=2])))
+sum(is.na(btbrga))
+table(btbrga)
+@ 
+
+We further check that the B6 and BTBR genotypes are homozygous
+for different alleles at these \Sexpr{sum(nmar(cleang)[-20])} markers.
+
+&lt;&lt;b6notbtbrA&gt;&gt;=
+all(is.na(b6ga) | (b6ga==1 & btbrga==3) | (b6ga==3 & btbrga==1))
+@
+
+Let's swap the genotype codes for the markers where the BTBR mice have
+the +1+ genotype (to make it so that +1+ is homozygous B6 and +3+ is homozygous BTBR).
+
+&lt;&lt;swapAgenotypes&gt;&gt;=
+toswap &lt;- names(btbrga)[btbrga==1]
+for(chr in names(cleang$geno)[-20]) {
+  thisswap &lt;- toswap[!is.na(match(toswap, markernames(cleang, chr=chr)))]
+  cleang$geno[[chr]]$data[,thisswap] &lt;- 4 - cleang$geno[[chr]]$data[,thisswap]
+}
+ga &lt;- pull.geno(cleang, chr="-X")
+@
+
+=== Genotypes in F~1~ ===
+
+Let's look at the \Sexpr{sum(strain=="F1")} F~1~ mice.  They
+should all be heterozygous.
+
+&lt;&lt;checkF1A&gt;&gt;=
+f1ga &lt;- ga[strain=="F1",]
+sum(!is.na(f1ga) & f1ga != 2)
+f1ga[,apply(f1ga, 2, function(a) !all(is.na(a) | a==2))]
+@
+
+There are 18 markers with a homozygous F~1~ mouse, but at each of
+these markers there is just one such mouse.
+
+=== Segregation in F~2~ ===
+
+We now turn to the segregation patterns of these autosomal markers in
+the F~2~ mice.  As in our study of the X-linked markers, we are
+looking for markers whose aberrant segregation indicates a high
+genotyping error rate.  We use +geno.table+ to inspect the segregation
+patterns; the p-values are for tests of 1:2:1 segregation.  We do the
+calculation for all markers, and then pull out the rows that show
+significant departure at a 5% level, after a Bonferroni correction for
+the multiple tests.
+
+&lt;&lt;genotype_table&gt;&gt;=
+gt &lt;- geno.table(subset(cleang, chr="-X", ind=(strain=="F2")))
+bad &lt;- gt$P.value &lt; 0.05/nrow(gt)
+gt[bad,]
+@
+
+The markers on chromosome 6 show real segregation distortion rather
+than genotyping errors, due to the study design (that's where leptin
+sits).  The other \Sexpr{sum(bad & gt$chr!=6)} markers are probably
+error-prone.  (The two markers on chromosome 4 are not near each
+other.)  It's probably best to remove them.
+
+&lt;&lt;removebadmarkers&gt;&gt;=
+cleang &lt;- drop.markers(cleang, rownames(gt)[bad & gt$chr != 6])
+@
+
+Let's look at plots of the segregation patterns.  First, we re-run
++geno.table+ with the argument +scanone=TRUE+ (more formally,
++scanone.output=TRUE+), so that the output is as that from a genome
+scan.  
+
+&lt;&lt;rerun_genotype_table,cache=TRUE&gt;&gt;=
+gt &lt;- geno.table(subset(cleang, chr="-X", ind=(strain=="F2")), scanone=TRUE)
+@
+
+Now let's plot the -log (base 10) p-values and the genotype
+frequencies, for each chromosome.  
+For the p-values, I'll use a different y-axis
+for chromosome 6 than for the others.
+
+[[plot_segregationA_top]]
+This is a _very long_ set of figures; &lt;&lt;plot_segregationA_bottom,click here&gt;&gt; to
+jump to below them.
+
+&lt;&lt;junk,echo=FALSE&gt;&gt;=    Somehow, this avoids the "figure margins too large" error
+par(mar=rep(0,4))
+@
+
+&lt;&lt;plotsegregationA,fig=TRUE,height=64&gt;&gt;=
+par(mfrow=c(20,2))
+ym1a &lt;- max(gt$neglog10P)
+ym1b &lt;- max(gt$neglog10P[gt$chr != 6])
+ym2 &lt;- max(gt$BR)
+for(i in c(1:19,"un")){
+      plot(gt, chr=i, main=paste("Chr", i), ylim=c(0,ifelse(i==6,ym1a,ym1b)))
+      plot(gt, chr=i, lod=3:5, main=paste("Chr", i), ylab="Genotype frequency",
+           ylim=c(0, ym2), col=c("green","blue","red"))
+      legend("bottomleft", lwd=2, col=c("green","blue","red"), c("BB","BR","RR"))
+}
+@
+
+[[plot_segregationA_bottom]]
+(&lt;&lt;plot_segregationA_top,Click here&gt;&gt; to jump back to the top of
+those figures.)
+
+There are lots of little spikes in these figures (e.g., chromosome 13 at
+\Sexpr{myround(gt$pos[gt$chr==13 & gt[,3]&gt;4], 1)} cM): single markers
+with somewhat aberrant segregation patterns relative to the
+surrounding markers.  These likely correspond to a small proportion of
+genotyping errors.
+
+The bad marker on chromosome 13 is quite clearly indicated to be due to a
+large batch of double-crossovers (indicating likely genotyping
+errors).  To show that, we look at two-locus genotype tables for the
+problem marker and the adjacent markers to the left and right.
+
+&lt;&lt;chr13issue&gt;&gt;=
+f2g &lt;- subset(cleang, ind=(strain=="F2"))
+themar &lt;- rownames(gt)[gt$chr==13 & gt[,3]&gt;4]
+c13mar &lt;- markernames(cleang, chr=13)
+themarnum &lt;- which(c13mar == themar)
+c13mar[themarnum+c(-1,0,1)]
+geno.crosstab(f2g, c13mar[themarnum+c(-1,1)])
+geno.crosstab(f2g, c13mar[themarnum+c(-1,0)])
+geno.crosstab(f2g, c13mar[themarnum+c(0,1)])
+@
+
+As seen in the above tables, the markers to the left and right of 
+\Sexpr{themar} show just one recombinant, but there are about 30
+double-recombination events.  This marker appears to have a genotyping
+error rate of about 5%.  It is interesting to note that it also has 5%
+missing data.  Probably I should look at the quality scores for this
+and other markers, and perhaps also the intensities from the
+genotyping arrays.
+
+For now, it is probably okay to leave this and similar markers in the
+data, as if we run +calc.genoprob+ with +error.prob=0.002+, the errors
+will be smoothed over.  We can check that, for this marker, by looking
+at the two-locus genotype tables after imputing in the genotypes with
++fill.geno+.  
+
+&lt;&lt;chr13imputed&gt;&gt;=
+f2gi &lt;- fill.geno(f2g, error.prob=0.002, map.function="c-f", method="argmax")
+geno.crosstab(f2gi, c13mar[themarnum+c(-1,1)])
+geno.crosstab(f2gi, c13mar[themarnum+c(-1,0)])
+geno.crosstab(f2gi, c13mar[themarnum+c(0,1)])
+@
+
+As seen in these tables, in the imputed data, the genotypes that led
+to double-crossovers were deemed to be errors.
+
+
+=== Linkage to other chromosomes ===
+
+We next study whether the markers are all linked to their respective
+chromosomes and not to other chromosomes.  We do so by first 
+considering each pair of markers and calculating the 
+estimated recombination fractions and LOD scores indicating evidence
+for linkage.  This is accomplished with +est.rf+.  The calculation can
+take quite a long time, since with have a total of
+\Sexpr{totmar(subset(cleang, chr="-X"))} autosomal markers (including
+the \Sexpr{nmar(cleang)["un"]} markers on chromosome +"un"+).
+We use +pull.rf+ to pull out matrices of the LOD scores and
+estimated recombination fractions.
+
+&lt;&lt;estrf,cache=TRUE&gt;&gt;=
+temp &lt;- est.rf(f2g)
+lod &lt;- pull.rf(temp, "lod")
+rf &lt;- pull.rf(temp, "rf")
+@
+
+We now calculate the maximum LOD score between a marker another on
+its chromosome, and then the maximum LOD score between a marker and
+another on some other chromosome.
+
+&lt;&lt;getmaxlod&gt;&gt;=
+start &lt;- cumsum(c(1, nmar(f2g)))
+end &lt;- cumsum(nmar(f2g))
+maxlodsame &lt;- maxloddiff &lt;- rep(NA, sum(nmar(f2g)))
+names(maxlodsame) &lt;- names(maxloddiff) &lt;- markernames(f2g)
+for(i in seq(along=end)) {
+  maxlodsame[start[i]:end[i]] &lt;- apply(lod[start[i]:end[i],start[i]:end[i]],1,max, na.rm=TRUE)
+  maxloddiff[start[i]:end[i]] &lt;- apply(lod[start[i]:end[i],-c(start[i]:end[i],start[21]:end[21])],1,max, na.rm=TRUE)
+}
+max(maxloddiff[-(start[21]:end[21])])
+@
+
+For unlinked marker pairs (ignoring the markers on chromosome +"un"+), the biggest
+LOD score is 
+\Sexpr{myround(max(maxloddiff[-(start[21]:end[21])]), 2)}.  
+So everything looks clean.
+
+The three markers on the +"un"+ chromosome map quite cleanly to
+chromosomes 7 and 8, but since we don't have reliable build 37
+positions for them, it's probably best to just ignore them.
+
+Let me clarify that a bit.  Let's find, for each of the markers on
+chromosome +"un"+, the marker with the strongest evidence for linkage.
+
+&lt;&lt;linkedtoun&gt;&gt;=
+unmar &lt;- markernames(f2g, chr="un")
+linkedmar &lt;- unmar
+for(i in 1:3) 
+  linkedmar[i] &lt;- colnames(lod)[!is.na(lod[,end[20]+i]) & lod[,end[20]+i]==max(lod[,end[20]+i], na.rm=TRUE)]
+find.markerpos(f2g, linkedmar)
+@
+
+Now let's plot the LOD score for each of those markers against each
+other marker in the genome.
+
+&lt;&lt;plotlodun,fig=TRUE,height=9&gt;&gt;=
+unmar &lt;- markernames(f2g, chr="un")
+par(mfrow=c(3,1))
+for(i in unmar)
+  qtl:::plot.rfmatrix(lod, i, chr="-un", ylim=c(0,260), main=i)
+@
+
+=== Counts of crossovers ===
+
+Let's look again at the observed number of crossovers in each
+individual.  We'll first consider just the autosomes (and ignore the
++"un"+ chromosome).  These will be greatly affected by apparent
+genotyping errors, and so we'll do this both with the ``raw'' data as
+well as with imputed genotypes.
+
+&lt;&lt;countXO_autosomes&gt;&gt;=
+nxo.raw &lt;- countXO(f2g, chr=c("-X", "-un"))
+nxo.clean &lt;- countXO(fill.geno(f2g, method="argmax", error.prob=0.002, map.function="c-f"),
+                     chr=c("-X", "-un"))
+sort(nxo.clean, decreasing=TRUE)[1:10]
+@
+
+There are a handful of individuals with a large number of crossovers.
+Let's look at scatter plots of the raw counts against those from the
+imputed data.
+
+&lt;&lt;plotcountXO,fig=TRUE&gt;&gt;=
+par(mfrow=c(1,2), las=1)
+plot(nxo.clean, nxo.raw, xlab="No. crossovers (imputed)",
+     ylab="No. crossovers (raw data)")
+plot(nxo.clean, nxo.raw, xlab="No. crossovers (imputed)",
+     ylab="No. crossovers (raw data)", xlim=c(0,60), ylim=c(0,340))
+@
+
+
+=== Apparent genotyping errors ===
+
+Let's look more closely at the apparent genotyping errors.  We'll look
+at all of the markers except those in the +"un"+ group, and we'll
+compare the observed genotypes to the inferred genotypes allowing a
+small amount of genotyping error (using +fill.geno+ with
++method="argmax"+).
+
+&lt;&lt;fill_genotypes&gt;&gt;=
+gi &lt;- pull.geno(f2gi, chr="-un")
+g &lt;- pull.geno(f2g, chr="-un")
+rownames(g) &lt;- rownames(gi) &lt;- as.character(f2g$pheno$MouseNum)
+@
+
+Now let's count the number of apparent errors (that is, where the
+observed genotype doesn't match the imputed genotype) by marker and by
+mouse. 
+
+&lt;&lt;count_errors&gt;&gt;=
+err.by.mar &lt;- apply((!is.na(g) & gi != g), 2, function(a) sum(a))
+err.by.mar.prop &lt;- err.by.mar/nind(f2g)
+err.by.ind &lt;- apply((!is.na(g) & gi != g), 1, function(a) sum(a))
+tot.mar &lt;- totmar(subset(f2g, chr="-un"))
+err.by.ind.prop &lt;- err.by.ind/tot.mar
+@
+
+Now let's plot histograms of the proportion of errors, by marker and
+by mouse.
+
+&lt;&lt;hist_prop_errors, fig=TRUE, height=8&gt;&gt;=
+par(las=1, mfrow=c(2,1))
+hist(err.by.mar.prop, breaks=seq(-0.25, max(err.by.mar)+ 0.25, by=0.5)/nind(f2g),
+     main="Errors by marker", xlab="Proportion of apparent genotyping errors")
+rug(err.by.mar.prop, col="blue")
+u &lt;- par("usr")
+text(mean(u[1:2]), mean(u[3:4]), paste(sum(err.by.mar.prop &gt; 0.02), "markers with &gt; 2% errors"), col="red")
+text(mean(u[1:2]), mean(u[3:4])*0.7, paste(sum(err.by.mar.prop &lt; 0.01), "markers with &lt; 1% errors"), col="blue")
+
+hist(err.by.ind.prop, breaks=seq(-1, max(err.by.ind)+ 1, by=2)/tot.mar,
+     main="Errors by mouse", xlab="Proportion of apparent genotyping errors")
+rug(err.by.ind.prop, col="blue")
+u &lt;- par("usr")
+text(mean(u[1:2]), mean(u[3:4]), paste(sum(err.by.ind.prop &gt; 0.05), "mice with &gt; 5% errors"), col="red")
+@
+
+Let's now look at the proportion of genotyping errors by marker, after
+we omit the \Sexpr{sum(err.by.ind.prop &gt; 0.05)} mice with error rates
+&gt; 5%.
+
+&lt;&lt;error_by_mar_again,fig=TRUE&gt;&gt;=
+err.by.mar.dropbadmice &lt;- apply((!is.na(g) & gi != g)[err.by.ind.prop &lt; 0.05,], 2, function(a) sum(a))
+err.by.mar.dropbadmice.prop &lt;- err.by.mar.dropbadmice/sum(err.by.ind.prop &lt; 0.05)
+par(las=1)
+hist(err.by.mar.dropbadmice.prop, breaks=seq(-0.25, max(err.by.mar.dropbadmice)+ 0.25, by=0.5)/sum(err.by.ind.prop &lt; 0.05),
+     main="Errors by marker, dropping bad mice", xlab="Proportion of apparent genotyping errors")
+rug(err.by.mar.dropbadmice.prop, col="blue")
+u &lt;- par("usr")
+text(mean(u[1:2]), mean(u[3:4]), paste(sum(err.by.mar.dropbadmice.prop &gt; 0.02), "markers with &gt; 2% errors"), col="red")
+text(mean(u[1:2]), mean(u[3:4])*0.7, paste(sum(err.by.mar.dropbadmice.prop &lt; 0.01), "markers with &lt; 1% errors"), col="blue")
+@
+
+
+== Study the raw genotype array information ==
+
+In the last section above, we saw that there are a number of mice with
+very high error rates, and also a number of markers with very high
+error rates.  
+
+In order to figure out what's going on with these markers and mice, it
+seemed best to look at the raw genotype information.  The big genotype
+data file from Rosetta includes the allele intensities for each mouse
+at each marker on the Affymetrix genotyping arrays, as well as a
+quality score (which itself is of dubious quality).
+
+Via a Perl script, I pulled out just the \Sexpr{totmar(cleang)}
+segregating markers for all mice (except the control mouse).  At each
+marker, I grabbed the intensities for the two alleles, and also
+all of the other quality-related columns.  The resulting file is still
+quite large (about 160 Mb) and takes a while to load (about 2 min).  After
+loading the file, we'll split it into separate data frames, one for
+each marker.
+
+&lt;&lt;load_detailed_genotypes,cache=TRUE&gt;&gt;=
+allgeno &lt;- read.csv("Data/detailed_genotypes.csv", as.is=TRUE)
+allgeno &lt;- split(allgeno, allgeno$snp)
+@
+
+Let's now sort the markers and mice by their position in +cleang+.
+
+&lt;&lt;sort_allgeno&gt;&gt;=
+allgeno &lt;- allgeno[markernames(cleang)]
+allgeno &lt;- lapply(allgeno, function(a,b) a[match(b,a$Sample.Name),], cleang$pheno$longid)
+@
+
+Since these data include not just the F~2~ mice but also the F~1~, B6
+and BTBR mice, let's get imputed genotypes for all mice.
+
+&lt;&lt;impute_allmice&gt;&gt;=
+cleangi &lt;- fill.geno(cleang, err=0.002, map.function="c-f", method="argmax")
+cg &lt;- pull.geno(cleang, chr="-un")
+cgi &lt;- pull.geno(cleangi, chr="-un")
+@
+
+
+=== The bad marker on chromosome 13 ===
+
+Let's first look at that badly behaved marker on chromosome 13,
+\Sexpr{themar}, and the adjacent markers to the left and right.
+
+&lt;&lt;intensities_chr13mar,fig=TRUE,height=12&gt;&gt;=
+mnam &lt;- markernames(cleang)
+wh &lt;- which(mnam == themar)
+c13mar &lt;- mnam[wh+c(-1,0,1)]
+par(mfrow=c(3,1), las=1)
+for(i in c13mar) {
+  plot(A2.Normalized.Signal ~ A1.Normalized.Signal, data=allgeno[[i]],
+       main=i, xlab="Allele 1 intensity", ylab="Allele 2 intensity",
+       col=c("blue","red","green","","","orange")[allgeno[[i]]$Measured.Genotype+1],
+       lwd=2)
+  legend("topright", pt.lwd=2, pch=c(1,1,1,1,16),
+  col=c("blue","red","green","orange", "hotpink"),
+         legend=c("11","12","22","missing","error"))
+  points(A2.Normalized.Signal ~ A1.Normalized.Signal,
+         data=allgeno[[i]], col="hotpink", pch=16, 
+         subset=!is.na(cg[,i]) & cg[,i] != cgi[,i])
+}
+@
+
+It's clear, from this, why marker \Sexpr{themar} is badly behaved.
+The two adjacent markers show clear separation of the three clusters
+of genotypes, while for \Sexpr{themar}, the clusters blend together.
+The inferred genotyping errors, highlighted in pink in the middle
+figure above, were called homozygous but were probably heterozygotes
+that melded into one of the clusters of homoyzgotes.
+
+=== The best and worst markers ===
+
+Let's look at the same sort of figures for the top five and bottom
+five markers.
+
+&lt;&lt;intensities_best_and_worst,fig=TRUE,height=16&gt;&gt;=
+worst5 &lt;- names(sort(err.by.mar.dropbadmice, decreasing=TRUE)[1:5])
+best5 &lt;- names(sort(err.by.mar.dropbadmice, decreasing=FALSE)[1:5])
+par(mfrow=c(5,2), las=1)
+for(i in 1:5) {
+  plot(A2.Normalized.Signal ~ A1.Normalized.Signal, data=allgeno[[worst5[i]]],
+       main=worst5[i], xlab="Allele 1 intensity", ylab="Allele 2 intensity",
+       col=c("blue","red","green","","","orange")[allgeno[[worst5[i]]]$Measured.Genotype+1],
+       lwd=2)
+  legend("topright", pt.lwd=2, pch=c(1,1,1,1,16),
+  col=c("blue","red","green","orange", "hotpink"),
+         legend=c("11","12","22","missing","error"))
+  points(A2.Normalized.Signal ~ A1.Normalized.Signal,
+         data=allgeno[[worst5[i]]], col="hotpink", pch=16, 
+         subset=!is.na(cg[,worst5[i]]) & cg[,worst5[i]] != cgi[,worst5[i]])
+
+  plot(A2.Normalized.Signal ~ A1.Normalized.Signal, data=allgeno[[best5[i]]],
+       main=best5[i], xlab="Allele 1 intensity", ylab="Allele 2 intensity",
+       col=c("blue","red","green","","","orange")[allgeno[[best5[i]]]$Measured.Genotype+1],
+       lwd=2)
+  legend("topright", pt.lwd=2, pch=c(1,1,1,1,16),
+  col=c("blue","red","green","orange", "hotpink"),
+         legend=c("11","12","22","missing","error"))
+  points(A2.Normalized.Signal ~ A1.Normalized.Signal,
+         data=allgeno[[best5[i]]], col="hotpink", pch=16, 
+         subset=!is.na(cg[,best5[i]]) & cg[,best5[i]] != cgi[,best5[i]])
+}
+@
+
+The figures on the left, above, correspond to the bad markers (as
+defined by their apparent genotyping error rate); the
+figures on the right correspond to the good markers.  The genotyping
+errors all seem to derive from the same problem: the intensities for
+heterozygotes overlap those for the two homozygotes.  
+
+
+=== Those seven bad mice ===
+
+Now let's try to figure out what's going on with those seven bad
+mice.  I'll grab the seven bad mice and a random seven of the other
+``good'' mice. We'll first look at the +"contrast"+ column, which I
+take to be a measure distinguishing between the two homozygous
+clusters.  
+
+&lt;&lt;badmice&gt;&gt;=
+badmice &lt;- match(as.character(f2g$pheno$longid)[err.by.ind.prop &gt; 0.05], allgeno[[1]]$Sample.Name)
+f2g$pheno$MouseNum[badmice]
+goodmice &lt;- sample(match(as.character(f2g$pheno$longid)[err.by.ind.prop &lt; 0.05], allgeno[[1]]$Sample.Name), length(badmice))
+contr &lt;- sapply(allgeno, function(a,b) a$Contrast[b], c(badmice, goodmice))
+@
+
+&lt;&lt;badmice_contrast, fig=TRUE, height=17.5&gt;&gt;=
+par(mfrow=c(7,2), las=1)
+for(i in 1:7) {
+  hist(contr[i,], breaks=seq(-1.5, 1.5, len=101), xlab="Contrast", 
+       main=cleang$pheno$MouseNum[badmice[i]])
+  hist(contr[i+7,], breaks=seq(-1.5, 1.5, len=101), xlab="Contrast", 
+       main=cleang$pheno$MouseNum[goodmice[i]])
+}
+@
+
+It looks like the ``bad'' mice are enriched for apparent homozygous
+genotypes.  Let's look at that more directly by plotting the
+number of genotyping errors against the proportion of markers with
++"contrast"+ &lt; 0.5.  
+
+&lt;&lt;numerr_v_contr, fig=TRUE, height=6&gt;&gt;=
+allcontr &lt;- sapply(allgeno, function(a) a$Contrast)
+plot(apply(allcontr, 1, function(a) mean(abs(a) &lt; 0.5)), 
+     apply(!is.na(cg) & (cg != cgi), 1, sum),
+     col=c("black", "blue", "red","green")[as.numeric(strain)],
+     ylab="Number of errors", xlab="Prop contrast &lt; 0.5")
+legend("topright", col=c("black","blue","red","green"), pch=1, 
+       pt.lwd=2, c("F2","B6","BTBR","F1"))
+@
+
+Six of the seven ``bad'' mice are at the lower range of the proportion
+of heterozygous genotypes.  
+
+We can use the a triangle plot (aka Holmans' triangle) to depict the
+genotype frequencies for each mouse, as another way to indicate this
+aspect of the problem in these mice.  
+
+
+&lt;&lt;triplot, fig=TRUE, height=8&gt;&gt;=
+library(broman)
+gf &lt;- apply(pull.geno(cleang, chr=c("-un", "-X")), 1, 
+            function(a) table(factor(a, levels=1:3))/sum(!is.na(a)))
+triplot(labels=c("BB","BR","RR"))
+tripoints(gf[,-badmice], col=c("black", "blue", "red", "green")[as.numeric(strain)][-badmice], lwd=2)
+tripoints(gf[,badmice], col="orange", lwd=2)
+legend("topright", col=c("black","blue","red","green","orange"), pch=1, 
+       pt.lwd=2, c("F2","B6","BTBR","F1","bad"))
+@
+
+== How to deal with the genotyping errors? ==
+
+I'm inclined to drop the seven mice with high genotyping error rates
+and so high numbers of observed crossovers.  We might further seek to
+omit particularly bad markers, and even omit particular genotypes that
+look to be errors, but I think for the markers and the individual
+genotyping errors, it is sufficient to rely on the hidden Markov model
+(HMM) with assumed genotyping error rate.  
+
+So, let's just drop the seven bad mice (having genotyping error rate &gt;
+5%).
+
+&lt;&lt;dropbadmice&gt;&gt;=
+badmice &lt;- names(err.by.ind.prop)[err.by.ind.prop &gt; 0.05]
+badg &lt;- subset(cleang, ind=!is.na(match(cleang$pheno$MouseNum, badmice)))
+cleang &lt;- subset(cleang, ind=is.na(match(cleang$pheno$MouseNum, badmice)))
+f2g &lt;- subset(cleang, ind=(cleang$pheno$Strain=="F2"))
+@
+
+== Duplicate individuals ==
+
+Let's look for F~2~ individuals with nearly duplicate genotype data.
+
+&lt;&lt;comparegeno,fig=TRUE&gt;&gt;=
+cg &lt;- comparegeno(f2g)
+cgu &lt;- cg[lower.tri(cg)]
+par(las=1, mar=c(5.1,4.1,0.6,0.6))
+hist(cgu, main="", xlab="Proportion of matching genotypes",
+     breaks=seq(0, 1, len=201))
+rug(c(sort(cgu)[1:100], sort(cgu, dec=TRUE)[1:100]), col="blue")
+@
+
+There are five pairs of mice with nearly matching genotypes.
+
+&lt;&lt;matching_mice&gt;&gt;=
+wh &lt;- which(cg &gt; 0.8, arr=TRUE)
+wh &lt;- wh[wh[,1] &lt; wh[,2],]
+cbind(as.character(f2g$pheno$MouseNum)[wh[,1]], as.character(f2g$pheno$MouseNum)[wh[,2]])
+@
+
+It's safe to assume that these are sample mix-ups, and that any
+mismatches are genotyping errors in one or the other cases.  We'll
+omit genotypes that mismatch.
+
+&lt;&lt;omit_mismatching_genotypes&gt;&gt;=
+n.omit &lt;- rep(0,nrow(wh))
+for(i in 1:nrow(wh)) {
+  for(j in 1:nchr(f2g)) {
+    g1 &lt;- f2g$geno[[j]]$data[wh[i,1],]
+    g2 &lt;- f2g$geno[[j]]$data[wh[i,2],]
+    toomit &lt;- !is.na(g1) & !is.na(g2) & g1 != g2
+    f2g$geno[[j]]$data[wh[i,1], toomit] &lt;- NA
+    f2g$geno[[j]]$data[wh[i,2], toomit] &lt;- NA
+    n.omit[i] &lt;- n.omit[i] + sum(toomit)
+  }
+}
+n.omit
+@
+
+As seen, the five pairs have between \Sexpr{min(n.omit)} and
+\Sexpr{max(n.omit)} genotyping errors.  
+
+
+== Estimated genetic map ==
+
+Let's re-estimate the genetic map 
+to see how it differs from the map from Cox et al. (_Genetics,_
+182:1335-1344, 2009).  I'll use a genotype error rate of 2/1000, and
+the Carter-Falconer map function (which corresponds, approximately, to
+the high level of crossover interference in the mouse).
+
+First we should drop one mouse from each of the \Sexpr{length(n.omit)}
+duplicate pairs.
+
+&lt;&lt;drop_duplicates&gt;&gt;=
+f2g.nodup &lt;- subset(f2g, ind=(-wh[,2]))
+@
+
+Now we pull out the current map and re-estimate the map with the
+current data.  In +est.map()+, I use +n.cluster=8+ to run multiple
+chromosomes in parallel (a feature added in R/qtl version 1.20-4).
+
+&lt;&lt;estmap,cache=TRUE&gt;&gt;=
+origmap &lt;- pull.map(f2g.nodup, chr="-un")
+newmap &lt;- est.map(f2g.nodup, chr="-un", err=0.002,
+                  map.function="c-f", n.cluster=8)
+@
+
+Let's look at summaries of the original and the newly estimated maps.
+
+&lt;&lt;summarymap&gt;&gt;=
+cbind(summary.map(origmap), summary.map(newmap))[,c(1,5,2,6,3,7,4,8)]
+@ 
+
+Overall, the map hasn't changed much.  Let's plot the chromosome
+lengths against each other.  
+
+&lt;&lt;plotchrlengths,fig=TRUE&gt;&gt;=
+par(las=1, mar=c(5.1,4.1,0.6,0.6))
+plot(summary.map(origmap)[-21,2], summary.map(newmap)[-21,2],
+     type="n", xlab="Original chr length (cM)", 
+     ylab="New chr length (cM)")
+abline(0,1, lty=2, col="gray")
+text(summary.map(origmap)[-21,2], summary.map(newmap)[-21,2], c(1:19,"X"))
+@
+
+Let's plot the map next to the one embedded in the cross (which
+corresponds to that of Cox et al. 2009).  The map on the bottom is the
+newly estimated one.
+
+&lt;&lt;plotmap, fig=TRUE&gt;&gt;=
+par(mar=c(5.1,4.1,0.6,0.6))
+plot.map(origmap, newmap, horizontal=TRUE, main="")
+@
+
+We can also plot the individual interval lengths against each other.
+It's better to plot the difference against either the average or
+against one of the two lengths.  We'll plot the difference versus the
+original length (that is, in the Cox et al. maps).
+
+I've highlighted in red those intervals that increased in length by
+more than 4 cM; the numbers indicate the chromosome for the interval.
+
+&lt;&lt;plotintervallengths,fig=TRUE&gt;&gt;=
+par(las=1, mar=c(5.1,4.1,0.6,0.6))
+do &lt;- unlist(lapply(origmap, diff))
+dn &lt;- unlist(lapply(newmap, diff))
+thechr &lt;- rep(c(1:19,"X"), lapply(newmap, function(a) length(a)-1))
+plot(do, dn-do, 
+     type="n", xlab="Original interval length (cM)", 
+     ylab="Change (new - old) in interval length (cM)", ylim=c(-5,15))
+abline(h=0, lty=2, col="gray")
+points(do, (dn-do), col=c("black","red")[(dn-do&gt;4)+1])
+text(do[dn-do&gt;4]+0.25, (dn-do)[dn-do&gt;4], thechr[dn-do&gt;4], col="red", adj=c(0,0.5))
+@
+
+
+== Load and reformat the physical map ==
+Load and reformat the physical map, so that we can save it with the
+cross data.
+
+&lt;&lt;load_and_reformat_pmap&gt;&gt;=
+temp &lt;- read.csv("Maps/finalmap.csv", as.is=TRUE)
+temp &lt;- temp[!is.na(match(temp$marker, markernames(f2g))),]
+pmap &lt;- vector("list", 20)
+names(pmap) &lt;- c(1:19,"X")
+for(i in c(1:19,"X")) {
+  pmap[[i]] &lt;- temp[temp[,2]==i,3]/10^6
+  names(pmap[[i]]) &lt;- temp[temp[,2]==i,1]
+  class(pmap[[i]]) &lt;- ifelse(i=="X", "X", "A")
+}
+class(pmap) &lt;- "map"
+@
+
+Are there really the same number of markers per chromosome and are the markers in the same order?
+
+&lt;&lt;check_same_order&gt;&gt;=
+all(sapply(pmap, length) == nmar(f2g["-un",]))
+all(unlist(lapply(pmap, names)) == markernames(f2g["-un",]))
+@
+
+
+
+
+== Save the clean cross object ==
+&lt;&lt;savecross&gt;&gt;=
+save(cleang, f2g, newmap, pmap, file="Data/clean_cross.RData")
+save(badg, file="Data/bad_mice.RData")
+@
+</pre>
+</body>
+</html>
