@@ -266,7 +266,7 @@ With 500 arrays of 40k measurements, you would think we would be
 making many more plots than usual.  But, rather, we tend to make <font
 class="highlight">no</font> plots<br><br>
 
-If you can't look at all 500 histograms, you tend not to look at any.
+If you can&rsquo;t look at all 500 histograms, you tend not to look at any.
 </aside>
 
 <p class="pg">5</p></section>
@@ -282,8 +282,8 @@ If you can't look at all 500 histograms, you tend not to look at any.
 </div>
 
 <aside>500 boxplots, each summarizing 40k measurements.
-<br><br> Standard box plots don't work well with large data sets.  The
-usual five-number summaries don't give tail information, and it's hard
+<br><br> Standard box plots don&rsquo;t work well with large data sets.  The
+usual five-number summaries don&rsquo;t give tail information, and it&rsquo;s hard
 to show <font class="highlight">many</font> boxplots.</aside>
 
 
@@ -319,7 +319,7 @@ the usual rule for depicting &ldquo;outliers.&rdquo; </aside>
 I like this better: use lines to connect various quantiles. (Here, the
 1, 5, 10, 25, 50, 75, 90, 95, and 99%iles.)  <br><br>
 
-Wouldn't it be nice to click on an array and see the corresponding
+Wouldn&rsquo;t it be nice to click on an array and see the corresponding
 histogram?
 </aside>
 
@@ -340,7 +340,7 @@ Hover over an array above and see the corresponding histogram.  Click
 on an array for the histogram to persist; click again to make it go
 away.<br><br>
 
-Why aren't all of our graphs interactive?
+Why aren&rsquo;t all of our graphs interactive?
 </aside>
 
 
@@ -546,7 +546,7 @@ You need to learn the D3 library and also to code in JavaScript or
 CoffeeScript (a nicer language that is translated to JavaScript).  And
 the way D3 works is by manipulating elements in an HTML file,
 particularly elements in an SVG object. (SVG stands for
-&ldquo;scaleable vector graphics;&rdquo; it's an html-like way to
+&ldquo;scaleable vector graphics;&rdquo; it&rsquo;s an html-like way to
 specify an image.)<br><br>
 
 So you need to know HTML and SVG, and then also CSS (&ldquo;cascading
@@ -629,7 +629,7 @@ expression of a particular probe.<br><br>
 
 Hover over a point in the top-right to see all eQTL for a given probe.
 Click on a point to see the LOD curves across the genome for that
-probe: the association between that probe's expression and genotype at
+probe: the association between that probe&rsquo;s expression and genotype at
 each position in the genome.<br><br>
 
 Click on a marker in the lower LOD curve plot to see the corresponding
@@ -658,7 +658,7 @@ phenotype-vs-genotype plot in the top-right.
 <aside>
 Click on the image to see a movie.<br><br>
 
-You'll be popped to a separate page; you'll need to navigate back.
+You&rsquo;ll be popped to a separate page; you&rsquo;ll need to navigate back.
 </aside>
 
 <p class="pg">23</p></section>
@@ -671,7 +671,7 @@ You'll be popped to a separate page; you'll need to navigate back.
 
 <h3 style="margin-top:10px;margin-left:-20px;">Phenotypes measured over time</h3>
 
-<div id="phenofig" style="margin-top:-50px;margin-left:100px"></div>
+<div id="phenofig" style="margin-top:-50px;margin-left:100px;"></div>
 
 <aside>
 The top panel is an image plot of the phenotype, measured over time,
@@ -693,6 +693,69 @@ be removed.
 
 <script type="text/javascript" src="JS/pheno.js"></script>
 <p class="pg">21</p></section>
+
+
+
+<section>
+
+<h3 style="margin-top:10px;margin-left:-20px;">LOD curves, 62 min</h3>
+
+<div id="lod_onetime_fig" style="margin-left:-50px;"></div>
+
+<aside>
+LOD curves and QTL effect plot for a single time point.
+</aside>
+
+
+<p class="codelink">
+<a href="Coffee/lod_onetime.coffee" class="gray">code</a> |
+<a href="Data/ontime.json" class="gray">data</a>
+
+
+<script type="text/javascript" src="JS/lod_onetime.js"></script>
+<p class="pg">22</p></section>
+
+
+
+
+<section nopadding>
+
+<h3>All times, considered individually</h3>
+
+
+<div id="lod_alltimes_fig" style="font-size:20px;margin-left:-50px;"></div>
+
+<aside>
+Here we consider a phenotype measured over time, and perform QTL
+analysis with each time point individually, to seek genetic loci that
+affect the response.  The data concern a set of 162 recombinant inbred
+lines.<br><br>
+
+The top-left plot is a &ldquo;heat map&rdquo; of the LOD scores
+for each time point at each genomic position.  LOD scores are also
+colored to indicate the sign of the QTL effect, with red indicating
+that BB lines have larger phenotype values and blue indicating that AA lines
+have larger phenotype values.  We consider only those (position, time)
+pairs with LOD > 1.<br><br>
+
+When you hover over a point in the top-left plot, the LOD curves for the
+corresponding time are shown below, and the phenotype averages and
+estimated QTL effect (across time) for the corresponding genomic
+position are shown to the right.<br><br>
+
+Click on a point to show pointwise confidence bands on the QTL
+effect (&plusmn; 2 SE).  (We require a mouse click, as otherwise the graph
+was painfully slow to refresh.)
+</aside>
+
+
+<p class="codelink">
+<a href="Coffee/lod_alltimes.coffee" class="gray">code</a> |
+<a href="Data/alltimes.json" class="gray">data</a>
+
+
+<script type="text/javascript" src="JS/lod_alltimes.js"></script>
+<p class="pg">23</p></section>
 
 
 
@@ -719,7 +782,7 @@ be removed.
   <li><a href="http://d3js.org" class="highlight">D3</a> (aka <a
   href="http://www.d3js.org" class="highlight">d3.js</a>) is rather low level, but it</li>
       <ul class="lowlight">
-        <li>Is totally flexible (like <a href="http://www.r-project.org">R</a>'s static graphics)</li>
+        <li>Is totally flexible (like <a href="http://www.r-project.org">R</a>&rsquos static graphics)</li>
         <li>Provides hours of enjoyment</li>
         <li>Can provide other hours of frustration</li>
       </ul>
@@ -727,7 +790,7 @@ be removed.
 </ul>
 
 <aside>
-It's always good to have a summary slide with your key points.
+It&rsquo;s always good to have a summary slide with your key points.
 </aside>
 
 <p class="pg">24</p></section>
@@ -818,7 +881,7 @@ a great free book.  The <a
 href="http://pragprog.com/book/tbcoffee/coffeescript"><i>CoffeeScript</i></a>
 book is not free but is also great; you need to learn at least a bit of
 JavaScript first.  <a href="http://alignedleft.com/tutorials/d3">Scott
-Murray's D3 tutorials</a> are superb and are a great place to start
+Murray&rsquo;s D3 tutorials</a> are superb and are a great place to start
 for learning D3.  These slides are in html, using <a
 href="https://github.com/mbostock/stack">stack.js</a>.  I used <a
 href="http://github.com/kbroman/d3-tip">a modified version</a> of <a
