@@ -1,0 +1,17 @@
+.sperm ellipse {
+  fill: #fff;
+}
+
+.sperm path {
+  fill: none;
+  stroke: #fff;
+  stroke-linecap: round;
+}
+
+.sperm_mid {
+ stroke-width: 4px;
+}
+
+.sperm_tail {
+  stroke-width: 2px;
+}

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<style>
+@import url(css/sperm.css);
+@import url(css/stack.css);
+@import url(css/d3-tip.css);
+@import url(css/figures.css);
+@import url(css/kbroman_talk.css);
+/* comment following line to get rid of notes; uncommented to show notes */
+/* @import url(css/kbroman_presentation.css); */
+</style>
+
+<script charset="utf-8" src="JS/d3.js"></script>
+<script src="JS/d3.tip.js"></script>
+<script src="JS/plotframe.js"></script>
+
+<title>Why aren&rsquo;t all of our graphs interactive?</title>
+</head>
+<body class="overview">
+
+
+
+
+
+<section class="titlepage">
+<h2 class="highlight">Why aren&rsquo;t all of our graphs
+<font id="flash" class="glow">interactive</font>?</h2>
+
+<h4><a href="http://www.biostat.wisc.edu/~kbroman">Karl Broman</a></h4>
+<p class="nopadding">Biostatistics &amp; Medical Informatics, University of Wisconsin
+&ndash; Madison</p>
+
+<p class="nopadding"><code><a href="http://www.biostat.wisc.edu/~kbroman"
+class="gray">http://www.biostat.wisc.edu/~kbroman</a></code></p>
+
+<script type="text/javascript">
+var flashText = d3.select("body").select("#flash");
+
+var flashToggle = 0; // when flashing, keeps track of on/off
+var stateToggle = 0; // goes between 0 (off), 1 (on) and 2 (flashing)
+
+var flashFunc =
+      function() {
+        flashText.attr("class", function() {
+          if(flashToggle==5) {
+            flashToggle=-1;
+            return("highlight"); }
+          else return("glow"); });
+
+        flashToggle++;
+      };
+
+var flashInterval = setInterval(flashFunc, 400);
+
+flashText.on("click", function() {
+    if(stateToggle==0) {
+      clearInterval(flashInterval);
+      d3.select(this).attr("class", "highlight");
+    }
+    else if(stateToggle==1) {
+      d3.select(this).attr("class", "glow");
+    }
+    else {
+      d3.select(this).attr("class", "highlight");
+      flashToggle = 0;
+      flashInterval = setInterval(flashFunc, 400);
+    }
+    stateToggle++;
+    if(stateToggle > 2) stateToggle = 0;
+});
+</script>
+
+<p class="codelink"><a href="presentation.html" class="gray">Remove stickies</a>
+
+<aside>
+Click on the link at the bottom-left to remove these
+notes.<br><br>
+
+The flashing &ldquo;interactive&rdquo; is a joke; click
+on it to switch among off/on/flashing.<br><br>
+
+These slides were tested for Safari on a Mac and might look terrible
+in some browsers.  I have a lot more to learn about handling browser
+differences.
+</aside>
+
+</section>
+
+
+
+
+
+<section>
+<h3>Example: <font class=highlight>density estimate</font></h3>
+<div id="density_estimate" class="chart"></div>
+
+<div style="font-size:28px;width:420px;align:center;margin-left:350px;margin-top:15px">
+  <div style="float:left;" id="bandwidth">Bandwidth = 1.00</div>
+  <div id="bgrect" style="float:right;width:135px;">
+     <input type="range" min="-2" max="1" step = "0.05" value="0"></div>
+</div>
+<script src="JS/density.js"></script>
+
+<p class="codelink">
+<a href="Coffee/density.coffee" class="gray">code</a> |
+<a href="Coffee/plotframe.coffee" class="gray">plotframe</a>
+
+<aside>
+In graduate school (at UC Berkeley), I took a course on statistical
+computing from <a href="http://www.stat.berkeley.edu/~spector/">Phil
+Spector</a>.  One of the projects was to use <a
+href="http://homepage.cs.uiowa.edu/~luke/xls/xlispstat/">XLisp-Stat</a>
+to create an interactive plot of a density estimate, with a slider for
+bandwidth.<br><br>
+
+Why haven&rsquo;t I done anything like this in the
+subsequent 15 years?  Rather than make a bunch of static plots to find
+a good bandwidth, you can play around with the one interactive plot.
+</aside>
+
+<p class="pg">2</p></section>
+
+
+
+
+<section>
+<h3>Example: <font class="highlight">scatterplot</font></h3>
+<div id="scatterplot" class="chart"></div>
+<script src="JS/scatterplot.js"></script>
+
+<p class="codelink">
+<a href="Coffee/scatterplot.coffee" class="gray">code</a> |
+<a href="Coffee/plotframe.coffee" class="gray">plotframe</a>
+
+
+<aside>
+Outliers can be easily identified, with the right interactive plot.
+In R, you can use <code>identify()</code>, but who remembers how to do
+it?  Usually, I&rsquo;ll say, &ldquo;Hmm...I want to figure out which
+point has weight 1 &gt; 30 and weight 2 &lt; 25.&rdquo;
+</aside>
+
+<p class="pg">3</p></section>
+
+
+
+<section>
+<h3>Opportunities</h3>
+
+<ul class="tight">
+  <li>Exploration</li>
+       <ul class="lowlight">
+         <li>Tuning parameters</li>
+         <li>Identifying outliers</li>
+         <li>One fancy plot vs 1000 static plots</li>
+       </ul>
+
+  <li>Reports for collaborators</li>
+       <ul class="lowlight">
+         <li>Living documents!</li>
+         <li>Allow deeper exploration of the results</li>
+         <li>Cut down on simple questions?</li>
+       </ul>
+
+  <li><font class="glow">Big Data</font></li>
+       <ul class="lowlight">
+         <li>Don&rsquo;t just rely on summary statistics</li>
+         <li>Greatly compressed information, but with access to the details</li>
+         <li>Zoom into dense figures</li>
+         <li>More exploration, more connections</li>
+       </ul>
+
+</ul>
+
+<aside>
+The routine use of interactive graphics for exploratory data analysis
+seems a bit out of reach, but surely is possible.<br><br>
+
+Incorporating such graphics in reports to our collaborators could be
+really valueable.<br><br>
+
+Perhaps the greatest opportunity is for the exploration of large,
+complex data sets.
+</aside>
+
+<p class="pg">4</p></section>
+
+
+
+<section>
+<h3>Reproducible reports</h3>
+
+<ul class=small>
+  <li><a href="http://www.statistik.lmu.de/~leisch/Sweave/">Sweave</a></li>
+  <li><a href="http://www.methods.co.nz/asciidoc/">Asciidoc</a>
+      <font class="small">[<a href="Examples/clean_genotypes.html" class="gray">Example</a> | <a
+      href="Examples/clean_genotypes_asciidoc_source.html" class="gray">Source</a> | <a
+      href="http://powerman.name/doc/asciidoc" class="gray">Glossary</a>]</font></li>
+
+
+  <li><a href="http://daringfireball.net/projects/markdown/">Markdown</a> +
+      <a href="http://yihui.name/knitr/">knitr</a> &rarr; <a
+  href="http://www.rstudio.org/docs/authoring/using_markdown">R
+  markdown</a> (esp. in <a href="http://www.rstudio.org" class="gray">RStudio</a>)</li>
+</ul>
+
+<aside>
+
+<a href="http://www.statistik.lmu.de/~leisch/Sweave/">Sweave</a> is
+great; I wrote <a href="http://www.rqtl.org/book">my book</a> entirely
+with Sweave.  But for routine reports, dealing with page breaks can be
+a pain.<br><br>
+
+I&rsquo;ve moved to <a
+href="http://www.methods.co.nz/asciidoc/">asciidoc</a> for this;
+it&rsquo;s a more readable markup language. I use it to produce an
+html report, with no worries about page breaks. (For example, graphs
+can be extremely long.)<br><br>
+
+Lots of people are excited about <a
+href="http://daringfireball.net/projects/markdown/">markdown</a> with
+<a href="http://yihui.name/knitr/">knitr</a>, especially since
+it&rsquo;s incorporated within RStudio.  Markdown is like asciidoc
+(but even simpler).
+</aside>
+
+<p class="pg">5</p></section>
+
+
+<section>
+
+<h3>Attie project</h3>
+
+<p class="highlight">~500 B6 x BTBR intercross mice<font class="gray">, all knocked out for leptin</font></h4>
+
+<ul class="tight">
+  <li>Genotypes at 2057 SNPs (Affymetrix arrays)</li>
+  <li>Gene expression in six tissues (Agilent arrays)</li>
+      <ul class="lowlight">
+        <li>adipose</li>
+        <li>gastrocnemius muscle</li>
+        <li>hypothalamus</li>
+        <li>pancreatic islets</li>
+        <li>kidney</li>
+        <li>liver</li>
+      </ul>
+  <li>Numerous clinical phenotypes</li>
+      <ul class="nodash"><li class="lowlight">(e.g., body weight, insulin and glucose levels)</li></ul>
+  <li>Collaboration with <a
+  href="http://www.biochem.wisc.edu/faculty/attie/" class="gray">Alan Attie</a> and colleagues</li>
+
+</ul>
+
+
+
+<aside>
+My first adventure with big data: 500 mice x 6 arrays x 40k
+measurements.  The goal is to identify genes that contribute to
+obesity-induced diabetes.<br><br>
+
+With 500 arrays of 40k measurements, you would think we would be
+making many more plots than usual.  But, rather, we tend to make <font
+class="highlight">no</font> plots<br><br>
+
+If you can't look at all 500 histograms, you tend not to look at any.
+</aside>
+
+<p class="pg">5</p></section>
+
+
+
+<section>
+<h3>Many box plots</h3>
+
+
+<div align="center">
+<img src="figs/manyboxplots_oldschool.png">
+</div>
+
+<aside>500 boxplots, each summarizing 40k measurements.
+<br><br> Standard box plots don't work well with large data sets.  The
+usual five-number summaries don't give tail information, and it's hard
+to show <font class="highlight">many</font> boxplots.</aside>
+
+
+<p class="pg">6</p></section>
+
+<section>
+<h3>Many box plots</h3>
+
+
+<div align="center">
+<img src="figs/manyboxplots_oldschoolB.png">
+</div>
+
+<aside>Boxplots with large datasets are made even worse by use of
+the usual rule for depicting &ldquo;outliers.&rdquo; </aside>
+
+
+<p class="pg">6</p></section>
+
+
+
+
+
+<section>
+<h3>Many box plots, <font class="highlight">modernized</font></h3>
+
+
+<div align="center">
+<img src="figs/manyboxplots.png">
+</div>
+
+<aside>
+I like this better: use lines to connect various quantiles. (Here, the
+1, 5, 10, 25, 50, 75, 90, 95, and 99%iles.)  <br><br>
+
+Wouldn't it be nice to click on an array and see the corresponding
+histogram?
+</aside>
+
+
+<p class="pg">7</p></section>
+
+
+
+<section>
+<h3>Many box plots, <font class="glow">interactive</font></h3>
+
+
+<div id="manyboxplots">
+</div>
+
+<aside>
+Hover over an array above and see the corresponding histogram.  Click
+on an array for the histogram to persist; click again to make it go
+away.<br><br>
+
+Why aren't all of our graphs interactive?
+</aside>
+
+
+<p class="codelink">
+<a href="Coffee/manyboxplots.coffee" class="gray">code</a> |
+<a href="Data/hypo.json" class="gray">data</a>
+
+
+<script type="text/javascript" src="js/manyboxplots.js"></script>
+<p class="pg">8</p></section>
+
+
+
+
+
+<section>
+<h3>Barriers</h3>
+
+<ul class=tight style="margin-right:100px;">
+  <li>We never learned how</font></li>
+  <li>It&rsquo;s a hassle</font></li>
+  <li>No consistent platform</font></li>
+  <li>Journal articles are static</font></li>
+      <ul class="nodash" style="margin-left:0px;"><li>
+          <font class="lowlight"><font class="small">(and what else matters?)</font></font>
+      </li></ul>
+  <li>Most statisticians are still creating terrible static plots</font></li>
+       <ul class="nodash" style="margin-left:0px;"><li>
+          <font class="lowlight"><font class="small">(even worse, obnoxious tables)</font></font>
+       </li></ul>
+</ul>
+
+<aside>
+Why aren&rsquo;t statisticians making interactive graphs?  Primarily
+because we&rsquo;ve not learned how.  And it does remain somewhat
+difficult.  And there are too many options, most of them incompletely
+developed.<br><br>
+
+But I think the primary reason is that journal articles are static, so
+what incentive is there to develop interactive graphics tools?
+<br><br>
+
+And then most statisticians are still putting little care into
+visualizations, at all.
+</aside>
+
+<p class="pg">10</p></section>
+
+<section>
+<h3>Barriers</h3>
+
+<ul class=tight style="margin-right:100px;">
+  <li>We never learned how</font></li>
+  <li>It&rsquo;s a hassle</font></li>
+  <li>No consistent platform</font></li>
+  <li>Journal articles are static</font></li>
+      <ul class="nodash" style="margin-left:0px;"><li>
+          <font class="lowlight"><font class="small">(and what else matters?)</font></font>
+      </li></ul>
+  <li>Most statisticians are still creating <font class="glow">terrible</font> static plots</font></li>
+       <ul class="nodash" style="margin-left:0px;"><li>
+       <font class="lowlight"><font class="small">(even worse, <font class="glow">obnoxious</font> tables)</font></font>
+       </li></ul>
+</ul>
+
+<aside>
+I mean it!  Lots of statisticians just create crappy tables, because
+they&rsquo;re lazy and don&rsquo;t care.
+</aside>
+
+<p class="pg">10</p></section>
+
+<section>
+<h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
+
+<div class="chart"><img src="Figs/jasa_sep2012_pg460.png" width=800></div>
+
+<aside>I flipped through the Sept, 2012, issue of JASA.  There are a
+surprising number of crappy tables, and a surprising dearth of good
+figures.</aside>
+<p class="pg">9</p></section>
+
+<section>
+<h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
+
+<div class="chart"><img src="Figs/jasa_sep2012_pg600.png" width=800></div>
+<p class="pg">10</p></section>
+
+<section>
+<h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
+
+<div class="chart"><img src="Figs/jasa_sep2012_pg665.png" width=800></div>
+<p class="pg">11</p></section>
+
+<section>
+<h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
+
+<div class="chart"><img src="Figs/jasa_sep2012_pg798.png" height=600></div>
+
+<p class="reference">
+There <em><font class="highlight">are</font></em> some nice ones.</p>
+
+<aside>Genovese et al., <a href="http://amstat.tandfonline.com/doi/abs/10.1080/01621459.2012.682527">The geometry of nonparametric filament estimation</a>.</aside>
+<p class="pg">12</p></section>
+
+
+<section>
+<h3>An alternative to tables</h3>
+
+<div class="chart"><img src="Figs/carr_fig.png"></div>
+
+<p class="reference">
+Carr & Pickle (2010) <a
+href="http://www.amazon.com/exec/obidos/ASIN/142007573X/7210-20"><i>Visualizing
+data patterns with Micromaps</i></a>.</p>
+
+<aside><a href="http://statistics.gmu.edu/people_pages/carr.html">Dan
+Carr</a> is brilliant.</aside>
+
+<p class="pg">13</p></section>
+
+
+<section>
+<h3>Options</h3>
+
+<ul class=reallytight>
+  <li><a href="http://homepage.cs.uiowa.edu/~luke/xls/xlispstat/">XLisp-Stat</a></li>
+  <li><code>locator()</code> and <code>identify()</code></li>
+  <li><a href="http://ggobi.org">ggobi</a> and <a href="https://github.com/ggobi/cranvas/wiki">cranvas</a></li>
+  <li><a href="http://4dpiecharts.com/2010/10/06/creating-guis-in-r-with-gwidgets/">gWidgets</a></li>
+  <li><a href="http://www.stats.gla.ac.uk/~adrian/rpanel/">rpanel</a></li>
+  <li><a href="http://rforge.net/Acinonyx/">Acinonyx</a> (aka iPlots eXtreme)</li>
+  <li><a href="http://rstudio.org/">RStudio</a>&rsquo;s <code><a
+  href="http://rstudio.org/docs/advanced/manipulate">manipulate()</a></code>
+  and <a href="http://www.rstudio.com/shiny/">Shiny</a></li>
+  <li><a href="http://r-forge.r-project.org/projects/gridsvg/">gridSVG</a></li>
+  <li><a href="http://rgl.neoscientists.org">RGL</a></li>
+  <li><a href="http://www.youtube.com/watch?v=iSXNfZESR5I">ggplot<font
+  class="highlight">3</font></a>?</li>
+  <li><a href="http://code.google.com/p/google-motion-charts-with-r/">googleVis</a></li>
+  <li><a href="http://d3js.org">D3.js</a></li>
+<ul>
+
+<aside>There seem to be <font class="darkhighlight">too many</font> options for producing dynamic and
+  interactive graphics.  Many are simple to use but not easily extended.  <a
+  href="http://had.co.nz">Hadley Wickham</a> (developer of ggplot2) is
+  working on interactive graphics and big data; he might make things easier for
+  us.  The most polished interactive graphics are in javascript using
+  the D3 library, though for now it&rsquo;s <font class="darkhighlight">very</font>
+  low-level work.</aside>
+
+<p class="pg">14</p></section>
+
+<section>
+<h3>Trade-offs</h3>
+
+<p align="center" style="margin-top:200px;font-size: 48px;"> <a href="http://code.google.com/p/google-motion-charts-with-r/">Easy</a> <font
+  class="gray">or <a href="http://d3js.org" class="highlight">flexible</a>?</font>
+
+
+<aside>You have to choose between easy or flexible; you can&rsquo;t have
+  both.  I&rsquo;m going for flexible.</aside>
+
+<p class="pg">15</p></section>
+
+
+
+<section class="nopadding">
+
+<div id="sperm" class="sperm" style="position:absolution;top:0px;left:0px;width:1280px;height:960px;">
+
+<div style="position:absolute;bottom:1px;left:1px;">
+<code style="font-size:36px;"><a href="http://bl.ocks.org/1136236">http://bl.ocks.org/1136236</a></code></div>
+
+<aside>This is one of the images that convinced me that I want to
+  learn D3.  The code is surprisingly short and easy to follow.</aside>
+
+<p class="pg">16</p>
+</div>
+<script src="JS/sperm.js"></script>
+</section>
+
+
+<section>
+<h3>A lot to learn</h3>
+
+<ul class="small">
+  <li><a href="https://developer.mozilla.org/en-US/docs/HTML/HTML5">HTML</a> and &ldquo;<a href="http://en.wikipedia.org/wiki/Document_Object_Model">The DOM</a>&rdquo;
+  <li><a href="https://developer.mozilla.org/en-US/docs/CSS">CSS</a>
+  <li><a href="https://developer.mozilla.org/en-US/docs/SVG">SVG</a>
+  <li><a href="http://caniuse.com">Differences among web browsers</a>
+  <li><a href="https://developer.mozilla.org/en-US/docs/JavaScript">JavaScript</a> / 
+      <a href="http://coffeescript.org">CoffeeScript</a>
+  <li><a href="http://d3js.org">D3</a>
+</ul>
+
+<aside>The hardest part about learning D3 is that there are a whole pile of things that you need to understand simultaneously, and some of them are rather dull.</aside>
+
+<p class="pg">17</p></section>
+</section>
+
+
+
+<section>
+<h3>Others&rsquo; <a href="http://d3js.org" style="color:white;">D3</a> <a href="https://github.com/mbostock/d3/wiki/Gallery" class="highlight">examples</a></h3>
+
+<ul class=tight>
+  <li><a href="http://bost.ocks.org/mike/nations/">Wealth and health of nations</a>
+  <li><a href="http://bl.ocks.org/1667367">Brushing</a>
+  <li><a href="http://bost.ocks.org/mike/miserables/">Adjacency matrix</a>
+  <li><a href="http://bost.ocks.org/mike/uberdata/">Chord diagram</a>
+  <li><a href="http://bost.ocks.org/mike/shuffle/">Random shuffles</a>
+  <li><a href="http://mbostock.github.com/d3/talk/20111018/collision.html">Collisions</a>
+  <li><a href="http://mbostock.github.com/d3/talk/20110921/#6">Different kinds of forces</a>
+  <li><a href="http://www.nytimes.com/interactive/2012/09/06/us/politics/convention-word-counts.html">Word counts at the conventions</a>
+</ul>
+
+<aside>There are loads of cool examples on the web.</aside>
+
+<p class="pg">18</p></section>
+
+</section>
+
+
+<section>
+<h3>Interactive LOD curves</h3>
+
+<div id="lod_and_effect" class="fig"></div>
+
+
+<aside>
+The curves at the top correspond to a measure of association between
+genotype and insulin level.  LOD scores are log<sub>10</sub>
+likelihood ratios: a transformation of the F statistic from
+ANOVA.<br><br>
+
+Click on a chromosome in the top panel to see a detailed view in the
+lower-left panel.  Click on a marker in the lower-left panel to see
+effect estimates and raw data on the right.  Hover over things on the
+right to get some further information.
+</aside>
+
+
+<p class="codelink">
+<a href="Coffee/lod_and_effect.coffee" class="gray">code</a> |
+<a href="Data/insulinlod.json" class="gray">data</a>
+
+
+<script type="text/javascript" src="JS/lod_and_effect.js"></script>
+<p class="pg">14</p></section>
+
+
+<section>
+<h3>Acknowledgments<font class="lowlight">: Data</font></h3>
+
+<div style="margin-left:120px;font-size:28px;">
+
+<table cellspacing=25>
+  <tr valign="top">
+     <td class="lowlight">Alan Attie<br>Mark Keller</td>
+     <td width=10></td>
+     <td>Biochemistry, UW&ndash;Madison</td>
+     </tr>
+
+  <tr valign="top">
+     <td class="lowlight">Brian Yandell</td>
+     <td></td>
+     <td>Statistics and Horticulture, UW&ndash;Madison</td>
+     </tr>
+
+  <tr valign="top">
+     <td class="lowlight">Christina Kendziorski<br>Aimee Teo Broman</td>
+     <td></td>
+     <td>Biostatistics & Medical Informatics, UW&ndash;Madison</td>
+     </tr>
+
+  <tr valign="top">
+     <td class="lowlight">Eric Schadt
+     <td></td>
+     <td>Pacific Biosciences of California</td>
+     </tr>
+
+  <tr valign="top">
+     <td class="lowlight">Danielle Greenawalt<br>Amit Kulkarni</td>
+     <td></td>
+     <td>Merck & Co., Inc.</td>
+     </tr>
+
+  <tr height=30><td></td></tr>
+
+  <tr valign="top">
+     <td class="lowlight">Edgar Spalding<br>Candace Moore<br>Logan Johnson</td>
+     <td></td>
+     <td>Botany, UW-Madison</td>
+     </tr>
+</table>
+</div>
+
+<aside>
+Many people are involved in the studies that led to this work.
+</aside>
+
+<p class="pg">17</p></section>
+
+<section>
+<h3>Acknowledgments<font class="lowlight">: Code</font></h3>
+
+<div style="margin-left:120px">
+  <p><a href="http://d3js.org" class="highlight">D3</a> and <a href="https://github.com/mbostock/stack" class="highlight">stack.js</a> by <a href="http://bost.ocks.org/mike" rel="author">Mike Bostock</a>
+
+  <p><a href="http://alignedleft.com/tutorials/d3"
+  class="highlight">D3 tutorials</a> by <a href="http://alignedleft.com">Scott Murray</a>
+
+  <p><a href="http://coffeescript.org" class="highlight">CoffeeScript</a> by <a
+  href="https://github.com/jashkenas">Jeremy Ashkenas</a>
+
+  <p><a href="http://eloquentjavascript.net"
+  class="highlight"><i>Eloquent JavaScript</i></a> by <a href="http://marijnhaverbeke.nl">Marijn Haverbeke</a>
+
+  <p><a href="http://pragprog.com/book/tbcoffee/coffeescript"
+  class="highlight"><i>CoffeeScript</i> book</a> by <a href="http://trevorburnham.com">Trevor Burnham</a>
+
+  <p><a href="https://github.com/Caged/d3-tip" class="highlight">d3-tip</a> by <a href="http://labratrevenge.com">Justin Palmer</a>
+</div>
+
+<aside>
+The interactive examples
+were produced with the <a href="http://d3js.org">D3</a>
+library (written in JavaScript). I wrote the code in CoffeeScript,
+which is translated to JavaScript but is a better-designed language.  <a
+href="http://eloquentjavascript.net"><i>Eloquent JavaScript</i></a> is
+a great free book.  The <a
+href="http://pragprog.com/book/tbcoffee/coffeescript"><i>CoffeeScript</i></a>
+book is not free but is also great; you need to learn at least a bit of
+JavaScript first.  <a href="http://alignedleft.com/tutorials/d3">Scott
+Murray's D3 tutorials</a> are superb and are a great place to start
+for learning D3.  These slides are in html, using <a
+href="https://github.com/mbostock/stack">stack.js</a>.  I used <a
+href="http://github.com/kbroman/d3-tip">a modified version</a> of <a
+href="http://github.com/Caged/d3-tip">d3-tip</a> for tool tips.
+</aside>
+
+<p class="pg">19</p></section>
+
+<script src="JS/stack.v0.js"></script>
+</body>
+</html>
