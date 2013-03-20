@@ -13,7 +13,8 @@
 body {
   height: 960px;
   width: 1280px;
-  background: #181818;
+#  background: #181818;
+  background: #fff;
   color: #fff;
 }
 

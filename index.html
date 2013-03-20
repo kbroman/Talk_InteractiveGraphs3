@@ -387,7 +387,7 @@ And then most statisticians are still putting little care into
 visualizations, at all.
 </aside>
 
-<p class="pg">10</p></section>
+<p class="pg">9</p></section>
 
 <section>
 <h3>Barriers</h3>
@@ -421,19 +421,19 @@ they&rsquo;re lazy and don&rsquo;t care.
 <aside>I flipped through the Sept, 2012, issue of JASA.  There are a
 surprising number of crappy tables, and a surprising dearth of good
 figures.</aside>
-<p class="pg">9</p></section>
+<p class="pg">11</p></section>
 
 <section>
 <h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
 
 <div class="chart"><img src="Figs/jasa_sep2012_pg600.png" width=800></div>
-<p class="pg">10</p></section>
+<p class="pg">12</p></section>
 
 <section>
 <h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
 
 <div class="chart"><img src="Figs/jasa_sep2012_pg665.png" width=800></div>
-<p class="pg">11</p></section>
+<p class="pg">13</p></section>
 
 <section>
 <h3>Examples from <a href="http://amstat.tandfonline.com/loi/jasa">JASA</a></h3>
@@ -444,7 +444,7 @@ figures.</aside>
 There <em><font class="highlight">are</font></em> some nice ones.</p>
 
 <aside>Genovese et al., <a href="http://amstat.tandfonline.com/doi/abs/10.1080/01621459.2012.682527">The geometry of nonparametric filament estimation</a>.</aside>
-<p class="pg">12</p></section>
+<p class="pg">14</p></section>
 
 
 <section>
@@ -460,7 +460,7 @@ data patterns with Micromaps</i></a>.</p>
 <aside><a href="http://statistics.gmu.edu/people_pages/carr.html">Dan
 Carr</a> is brilliant.</aside>
 
-<p class="pg">13</p></section>
+<p class="pg">15</p></section>
 
 
 <section>
@@ -492,7 +492,7 @@ Carr</a> is brilliant.</aside>
   the D3 library, though for now it&rsquo;s <font class="darkhighlight">very</font>
   low-level work.</aside>
 
-<p class="pg">14</p></section>
+<p class="pg">16</p></section>
 
 <section>
 <h3>Trade-offs</h3>
@@ -504,7 +504,7 @@ Carr</a> is brilliant.</aside>
 <aside>You have to choose between easy or flexible; you can&rsquo;t have
   both.  I&rsquo;m going for flexible.</aside>
 
-<p class="pg">15</p></section>
+<p class="pg">17</p></section>
 
 
 
@@ -518,7 +518,7 @@ Carr</a> is brilliant.</aside>
 <aside>This is one of the images that convinced me that I want to
   learn D3.  The code is surprisingly short and easy to follow.</aside>
 
-<p class="pg">16</p>
+<p class="pg">18</p>
 </div>
 <script src="JS/sperm.js"></script>
 </section>
@@ -558,7 +558,7 @@ differently, and you need to take that into account if you want your
 visualizations to be useable in any browser.
 </aside>
 
-<p class="pg">17</p></section>
+<p class="pg">19</p></section>
 </section>
 
 
@@ -579,7 +579,7 @@ visualizations to be useable in any browser.
 
 <aside>There are loads of cool examples on the web.</aside>
 
-<p class="pg">18</p></section>
+<p class="pg">20</p></section>
 
 </section>
 
@@ -609,7 +609,62 @@ right to get some further information.
 
 
 <script type="text/javascript" src="JS/lod_and_effect.js"></script>
-<p class="pg">14</p></section>
+<p class="pg">21</p></section>
+
+
+<section nopadding>
+
+<h3 style="margin-top:10px;margin-left:-20px;">Interactive eQTL plot</h3>
+
+<div id="cistrans" class="fig" style="margin-top:-80px;"></div>
+
+
+<aside>
+The top-left image shows inferred eQTL (sites in genome where genotype
+is associated with the expression of some gene).  The y-axis
+corresponds to the genomic location of probes on a gene expression
+array.  The x-axis corresponds to marker positions.  Dots indicate
+that the genotypes at a particular marker are associated with the
+expression of a particular probe.<br><br>
+
+Hover over a point in the top-right to see all eQTL for a given probe.
+Click on a point to see the LOD curves across the genome for that
+probe: the association between that probe's expression and genotype at
+each position in the genome.<br><br>
+
+Click on a marker in the lower LOD curve plot to see the corresponding
+phenotype-vs-genotype plot in the top-right.
+</aside>
+
+
+<p class="codelink">
+<a href="Coffee/cistrans.coffee" class="gray">code</a>
+
+
+<script type="text/javascript" src="JS/cistrans.js"></script>
+
+<p class="pg">22</p></section>
+
+
+<section>
+
+<h3>Spalding project</h3>
+
+<div style="position:absolute;top:312px;left:420px;font-size:20px;">
+<a href="Movie/gmovie.mov">
+  <img src="Movie/gmovie.jpg" width="440" alt="Phenotype movie"/>
+</a></div>
+
+<aside>
+Click on the image to see a movie.<br><br>
+
+You'll be popped to a separate page; you'll need to navigate back.
+</aside>
+
+<p class="pg">23</p></section>
+
+</section>
+
 
 <section>
 <h3>Summary</h3>
@@ -645,7 +700,7 @@ right to get some further information.
 It's always good to have a summary slide with your key points.
 </aside>
 
-<p class="pg">16</p></section>
+<p class="pg">24</p></section>
 
 
 
@@ -700,7 +755,7 @@ It's always good to have a summary slide with your key points.
 Many people are involved in the studies that led to this work.
 </aside>
 
-<p class="pg">17</p></section>
+<p class="pg">25</p></section>
 
 <section>
 <h3>Acknowledgments<font class="lowlight">: Code</font></h3>
@@ -740,7 +795,7 @@ href="http://github.com/kbroman/d3-tip">a modified version</a> of <a
 href="http://github.com/Caged/d3-tip">d3-tip</a> for tool tips.
 </aside>
 
-<p class="pg">19</p></section>
+<p class="pg">26</p></section>
 
 <script src="JS/stack.v0.js"></script>
 </body>
