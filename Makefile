@@ -54,19 +54,21 @@ webhtml:
 	scp *.html broman-7:public_html/presentations/InteractiveGraphs3/
 
 webcss:
-	scp css/*.css broman-7:public_html/presentations/InteractiveGraphs3/css/
+	scp CSS/*.css broman-7:public_html/presentations/InteractiveGraphs3/CSS/
 
 webcode:
 	scp JS/*.js broman-7:public_html/presentations/InteractiveGraphs3/JS/
 	scp Coffee/*.coffee broman-7:public_html/presentations/InteractiveGraphs3/Coffee/
 
 webdata:
-	scp data/*.json broman-7:public_html/presentations/InteractiveGraphs3/data/
+	scp Data/*.json broman-7:public_html/presentations/InteractiveGraphs3/Data/
+
+webfig:
+	scp Figs/*.json broman-7:public_html/presentations/InteractiveGraphs3/Figs/
 
 webex:
-	scp examples/*.png broman-7:public_html/presentations/InteractiveGraphs3/examples/
-	scp examples/*.html broman-7:public_html/presentations/InteractiveGraphs3/examples/
+	scp Examples/*.html broman-7:public_html/presentations/InteractiveGraphs3/Examples/
 
-web: webhtml webcss webcode webex webdata
+web: webhtml webcss webcode webex webdata webfig
 
 all: js web presentation.html
