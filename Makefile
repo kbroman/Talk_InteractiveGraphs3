@@ -3,31 +3,31 @@ mainstuff: js presentation.html Figs/manyboxplots.png Figs/manyboxplots_oldschoo
 js: JS/plotframe.js JS/scatterplot.js JS/density.js JS/manyboxplots.js JS/lod_and_effect.js JS/cistrans.js JS/pheno.js JS/lod_onetime.js JS/lod_alltimes.js
 
 JS/plotframe.js: Coffee/plotframe.coffee
-	coffee -bco js coffee
+	coffee -bco JS coffee/plotframe.coffee
 
 JS/scatterplot.js: Coffee/scatterplot.coffee
-	coffee -bco js coffee
+	coffee -co JS coffee/scatterplot.coffee
 
 JS/density.js: Coffee/density.coffee
-	coffee -bco js coffee
+	coffee -co JS coffee/density.coffee
 
 JS/manyboxplots.js: Coffee/manyboxplots.coffee
-	coffee -bco js coffee
+	coffee -co JS coffee/manyboxplots.coffee
 
 JS/lod_and_effect.js: Coffee/lod_and_effect.coffee
-	coffee -bco js coffee
+	coffee -co JS coffee/lod_and_effect.coffee
 
 JS/cistrans.js: Coffee/cistrans.coffee
-	coffee -bco js coffee
+	coffee -co JS coffee/cistrans.coffee
 
 JS/pheno.js: Coffee/pheno.coffee
-	coffee -bco JS Coffee
+	coffee -co JS Coffee/pheno.coffee
 
 JS/lod_onetime.js: Coffee/lod_onetime.coffee
-	coffee -bco JS Coffee
+	coffee -co JS Coffee/lod_onetime.coffee
 
 JS/lod_alltimes.js: Coffee/lod_alltimes.coffee
-	coffee -bco JS Coffee
+	coffee -co JS Coffee/lod_alltimes.coffee
 
 R/spal.RData: R/prep_rep1_data.R RawData/rep1_rev.csv
 	cd R;R CMD BATCH prep_rep1_data.R
