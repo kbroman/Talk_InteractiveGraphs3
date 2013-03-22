@@ -50,23 +50,23 @@ Figs/manyboxplots_oldschool.png: R/hypo_boxplot_oldschool.R
 presentation.html: index.html js css/kbroman_talk.css css/kbroman_presentation.css
 	Perl/create_presentation.pl
 
-webmain:
-	scp index.html presentation.html broman-6:public_html/presentations/InteractiveGraphs/
+webhtml:
+	scp *.html broman-7:public_html/presentations/InteractiveGraphs3/
 
 webcss:
-	scp css/*.css broman-6:public_html/presentations/InteractiveGraphs/css/
+	scp css/*.css broman-7:public_html/presentations/InteractiveGraphs3/css/
 
 webcode:
-	scp JS/*.js broman-6:public_html/presentations/InteractiveGraphs/JS/
-	scp Coffee/*.coffee broman-6:public_html/presentations/InteractiveGraphs/Coffee/
+	scp JS/*.js broman-7:public_html/presentations/InteractiveGraphs3/JS/
+	scp Coffee/*.coffee broman-7:public_html/presentations/InteractiveGraphs3/Coffee/
 
 webdata:
-	scp data/*.json broman-6:public_html/presentations/InteractiveGraphs/data/
+	scp data/*.json broman-7:public_html/presentations/InteractiveGraphs3/data/
 
 webex:
-	scp examples/*.png broman-6:public_html/presentations/InteractiveGraphs/examples/
-	scp examples/*.html broman-6:public_html/presentations/InteractiveGraphs/examples/
+	scp examples/*.png broman-7:public_html/presentations/InteractiveGraphs3/examples/
+	scp examples/*.html broman-7:public_html/presentations/InteractiveGraphs3/examples/
 
-web: webmain webcss webcode webex webdata
+web: webhtml webcss webcode webex webdata
 
 all: js web presentation.html
