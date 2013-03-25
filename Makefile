@@ -1,32 +1,35 @@
 mainstuff: js presentation.html Figs/manyboxplots.png Figs/manyboxplots_oldschool.png
 
-js: JS/plotframe.js JS/scatterplot.js JS/density.js JS/manyboxplots.js JS/lod_and_effect.js JS/cistrans.js JS/pheno.js JS/lod_onetime.js JS/lod_alltimes.js
+js: JS/plotframe.js JS/scatterplot.js JS/density.js JS/manyboxplots.js JS/lod_and_effect.js JS/cistrans.js JS/pheno.js JS/lod_onetime.js JS/lod_onetime_random.js JS/lod_alltimes.js
 
 JS/plotframe.js: Coffee/plotframe.coffee
 	coffee -bco JS coffee/plotframe.coffee
 
-JS/scatterplot.js: Coffee/scatterplot.coffee
+JS/scatterplot.js: Coffee/scatterplot.coffee Data/scatterplot.json
 	coffee -co JS coffee/scatterplot.coffee
 
-JS/density.js: Coffee/density.coffee
+JS/density.js: Coffee/density.coffee Data/density.json
 	coffee -co JS coffee/density.coffee
 
-JS/manyboxplots.js: Coffee/manyboxplots.coffee
+JS/manyboxplots.js: Coffee/manyboxplots.coffee Data/hypo.json
 	coffee -co JS coffee/manyboxplots.coffee
 
-JS/lod_and_effect.js: Coffee/lod_and_effect.coffee
+JS/lod_and_effect.js: Coffee/lod_and_effect.coffee Data/insulinlod.json
 	coffee -co JS coffee/lod_and_effect.coffee
 
-JS/cistrans.js: Coffee/cistrans.coffee
+JS/cistrans.js: Coffee/cistrans.coffee Data/insulin_eqtl.json Data/probe_data/probe10002171767.json
 	coffee -co JS coffee/cistrans.coffee
 
-JS/pheno.js: Coffee/pheno.coffee
+JS/pheno.js: Coffee/pheno.coffee Data/pheno.json
 	coffee -co JS Coffee/pheno.coffee
 
-JS/lod_onetime.js: Coffee/lod_onetime.coffee
+JS/lod_onetime.js: Coffee/lod_onetime.coffee Data/onetime.json
 	coffee -co JS Coffee/lod_onetime.coffee
 
-JS/lod_alltimes.js: Coffee/lod_alltimes.coffee
+JS/lod_onetime_random.js: Coffee/lod_onetime_random.coffee Data/onetime_random.json
+	coffee -co JS Coffee/lod_onetime_random.coffee
+
+JS/lod_alltimes.js: Coffee/lod_alltimes.coffee data/all_lod.json
 	coffee -co JS Coffee/lod_alltimes.coffee
 
 R/spal.RData: R/prep_rep1_data.R RawData/rep1_rev.csv

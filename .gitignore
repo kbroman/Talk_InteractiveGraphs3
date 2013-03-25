@@ -14,6 +14,7 @@ Data/*.json
 JS/density.js
 JS/lod_alltimes.js
 JS/lod_onetime.js
+JS/lod_onetime_random.js
 JS/pheno.js
 JS/plotframe.js
 JS/scatterplot.js
