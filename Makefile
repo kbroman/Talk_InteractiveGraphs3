@@ -74,4 +74,7 @@ webex:
 
 web: webhtml webcss webcode webex webdata webfig
 
-all: js web presentation.html
+all: js web presentation.html tar
+
+tar: mainstuff
+	cd ..;tar czvhf InteractiveGraphs3.tgz InteractiveGraphs3/*.html InteractiveGraphs3/CSS/*.css InteractiveGraphs3/Coffee/*.coffee InteractiveGraphs3/JS/*.js InteractiveGraphs3/Data/*.json InteractiveGraphs3/Data/probe_data/ InteractiveGraphs3/Examples/ InteractiveGraphs3/Figs/ InteractiveGraphs3/Movie/
