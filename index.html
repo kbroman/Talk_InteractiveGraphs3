@@ -35,7 +35,17 @@
 &ndash; Madison</p>
 
 <p class="nopadding"><code><a href="http://www.biostat.wisc.edu/~kbroman"
-class="gray">http://www.biostat.wisc.edu/~kbroman</a></code></p>
+class="gray">http://www.biostat.wisc.edu/~kbroman</a><br></code></p>
+
+<div style="opacity:0;" id="github">
+<p class="nopadding" style="margin-top:-30px;"><code>
+<a href="http://github.com/kbroman"
+class="gray">github.com/kbroman</a><br>
+<a class="gray" href="https://twitter.com/kwbroman">@kwbroman</a>
+</code></p>
+</div>
+
+
 
 <script type="text/javascript">
 var flashText = d3.select("body").select("#flash");
@@ -77,17 +87,29 @@ flashText.on("click", function() {
 <p class="codelink"><a href="presentation.html" class="gray">Remove stickies</a>
 
 <aside>
-Click on the link at the bottom-left to remove these
+Click on the link at the bottom-left to go to a version without these
 notes.<br><br>
 
 The flashing &ldquo;interactive&rdquo; is a joke; click
 on it to switch among off/on/flashing.<br><br>
+
+I've also hidden links to me at github and twitter, just below the
+link to my webpage.<br><br>
 
 These slides were tested for Safari on a Mac and might look terrible
 in some browsers.  I have a lot more to learn about handling browser
 differences.
 </aside>
 
+<script language="Javascript">
+clicked = 0;
+d3.select("div#github")
+  .on("mouseover", function() { d3.select(this).style("opacity", 1); })
+  .on("mouseout", function() { if(!clicked) d3.select(this).style("opacity", 0); })
+  .on("click", function() {
+      if(clicked) { clicked=0; d3.select(this).style("opacity", 0); }
+      else { clicked=1;  d3.select(this).style("opacity", 1); } });
+</script>
 </section>
 
 
