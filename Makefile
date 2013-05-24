@@ -17,7 +17,7 @@ JS/manyboxplots.js: Coffee/manyboxplots.coffee Data/hypo.json
 JS/lod_and_effect.js: Coffee/lod_and_effect.coffee Data/insulinlod.json
 	coffee -co JS coffee/lod_and_effect.coffee
 
-JS/cistrans.js: Coffee/cistrans.coffee Data/insulin_eqtl.json Data/probe_data/probe10002171767.json
+JS/cistrans.js: Coffee/cistrans.coffee Data/islet_eqtl.json Data/probe_data/probe10002171767.json
 	coffee -co JS coffee/cistrans.coffee
 
 JS/pheno.js: Coffee/pheno.coffee Data/pheno.json
@@ -67,7 +67,7 @@ webdata:
 	scp Data/*.json broman-7:public_html/presentations/InteractiveGraphs3/Data/
 
 webfig:
-	scp Figs/*.json broman-7:public_html/presentations/InteractiveGraphs3/Figs/
+	scp Figs/* broman-7:public_html/presentations/InteractiveGraphs3/Figs/
 
 webex:
 	scp Examples/*.html broman-7:public_html/presentations/InteractiveGraphs3/Examples/
