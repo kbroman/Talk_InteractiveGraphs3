@@ -28,7 +28,7 @@ bigRad = 5
 # dimensions of SVG
 w = [800, 200]
 h = 500
-pad = {left:60, top:40, right:10, bottom: 60, inner: 5}
+pad = {left:60, top:50, right:10, bottom: 60, inner: 5}
 totalw = w[0]+w[1]+pad.left*2+pad.right*2
 totalh = h + pad.top + pad.bottom
 
@@ -409,7 +409,7 @@ drawRandom = (data, column) ->
 
   effpanel.append("text").attr("id", "random_pxgtitle_marker")
     .attr("x", left[1]+w[1]/2)
-    .attr("y", pad.top*0.02)
+    .attr("y", pad.top*0.10)
     .text("")
     .attr("fill", titlecolor)
     .attr("text-anchor", "middle")
